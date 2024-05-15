@@ -6,8 +6,13 @@
 
 #define EncResolution 100
 #define pi 3.14159
+#define N 8
+#define inv_N 1/N
 
-volatile int contador = 0;
+volatile int contador[N] = {0, 0, 0, 0, 0, 0, 0, 0};
+volatile int interrupcao_atual = 0;
+int soma_contador = 0;
+float media_contador = 0;
 unsigned long tempoAtual;
 unsigned long tempoAnterior = 0;
 int chA_antigo = 0;
@@ -28,7 +33,7 @@ void setup() {
 }
 
 void loop() {
-  tempoAtual = millis(); // atualiza o quanto tempo se passou desde o início
+  tempoAtual = millis(); // Atualiza o quanto tempo se passou desde o início
 
   if (tempoAtual <=10000){  // if Para acionar o motor por apenas 2500 millissegundos
 
@@ -37,10 +42,13 @@ void loop() {
     //velocidade = ((float)contador/EncResolution)*2*pi*(1/(tempoAtual - tempoAnterior)); // Calcula a velocidade em rad/s
     //Serial.println(velocidade); // Envia a velocidade calculada pelo serial
 
-    Serial.println(contador);
+    Serial.println(media_contador);
     
-    contador = 0; // Reinicia o contador
+    //contador = {0, 0, 0, 0, 0, 0, 0, 0}; // Reinicia o contador
     tempoAnterior = tempoAtual; // Atualiza o tempo
+    
+    if (interrupcao_atual < N-1) interrupcao_atual++;
+    else interrupcao_atual = 0;
   }
   else{ // Desliga o motor e para de enviar
     controlaMotor(0,0,0); 
@@ -54,38 +62,39 @@ void leituraEncoder() {
   int chA_atual = digitalRead(chA);
   int chB_atual = digitalRead(chB);
 
+  soma_contador = soma_contador - contador[interrupcao_atual];
+
   if (chA_antigo == 0 && chB_antigo == 0) {
-    if(chA_atual == 1 && chB_atual == 1) contador = contador + 2;
-    else if(chA_atual == 1 && chB_atual == 0) contador--;
-    else if(chA_atual == 0 && chB_atual == 1) contador++;
+    if(chA_atual == 1 && chB_atual == 1) contador[interrupcao_atual] = contador[interrupcao_atual] + 2;
+    else if(chA_atual == 1 && chB_atual == 0) contador[interrupcao_atual]--;
+    else if(chA_atual == 0 && chB_atual == 1) contador[interrupcao_atual]++;
   }
   else if (chA_antigo == 0 && chB_antigo == 1) {
-    if(chA_atual == 1 && chB_atual == 1) contador ++;
-    else if(chA_atual == 1 && chB_atual == 0) contador = contador - 2;
-    else if(chA_atual == 0 && chB_atual == 1) contador = contador;
-    else contador--;
+    if(chA_atual == 1 && chB_atual == 1) contador[interrupcao_atual]++;
+    else if(chA_atual == 1 && chB_atual == 0) contador[interrupcao_atual] = contador[interrupcao_atual] - 2;
+    else if(chA_atual == 0 && chB_atual == 1) contador[interrupcao_atual] = contador[interrupcao_atual];
+    else contador[interrupcao_atual]--;
   }
   else if (chA_antigo == 1 && chB_antigo == 0) {
-    if(chA_atual == 1 && chB_atual == 1) contador--;
-    else if(chA_atual == 1 && chB_atual == 0) contador = contador;
-    else if(chA_atual == 0 && chB_atual == 1) contador = contador - 2;
-    else contador ++;
+    if(chA_atual == 1 && chB_atual == 1) contador[interrupcao_atual]--;
+    else if(chA_atual == 1 && chB_atual == 0) contador[interrupcao_atual] = contador[interrupcao_atual];
+    else if(chA_atual == 0 && chB_atual == 1) contador[interrupcao_atual] = contador[interrupcao_atual] - 2;
+    else contador[interrupcao_atual] ++;
   }
   else if (chA_antigo = 1 && chB_antigo == 1) {
-    if(chA_atual == 1 && chB_atual == 1) contador = contador;
-    else if(chA_atual == 1 && chB_atual == 0) contador++;
-    else if(chA_atual == 0 && chB_atual == 1) contador--;
-    else contador = contador + 2;
+    if(chA_atual == 1 && chB_atual == 1) contador[interrupcao_atual] = contador[interrupcao_atual];
+    else if(chA_atual == 1 && chB_atual == 0) contador[interrupcao_atual]++;
+    else if(chA_atual == 0 && chB_atual == 1) contador[interrupcao_atual]--;
+    else contador[interrupcao_atual] = contador[interrupcao_atual] + 2;
   }
+
+  soma_contador = soma_contador + contador[interrupcao_atual];
+
+  media_contador = soma_contador*inv_N;
 
   chA_antigo = chA_atual;
   chB_antigo = chB_atual;
-
-  // if (digitalRead(chB) == digitalRead(chA)) {
-  //   contador++;
-  // } else {
-  //   contador--;
-  // }
+  
 }
 
 void controlaMotor (bool in1, bool in2, float pwm){
