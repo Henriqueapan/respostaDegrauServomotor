@@ -7,10 +7,10 @@
 #define EncResolution 100
 #define pi 3.14159
 #define N 8
-#define inv_N 1/N
 
 volatile int contador[N] = {0, 0, 0, 0, 0, 0, 0, 0};
 volatile int interrupcao_atual = 0;
+float inv_N = 1/N;
 int soma_contador = 0;
 float media_contador = 0;
 unsigned long tempoAtual;
@@ -46,7 +46,7 @@ void loop() {
     
     //contador = {0, 0, 0, 0, 0, 0, 0, 0}; // Reinicia o contador
     tempoAnterior = tempoAtual; // Atualiza o tempo
-    
+
     if (interrupcao_atual < N-1) interrupcao_atual++;
     else interrupcao_atual = 0;
   }
