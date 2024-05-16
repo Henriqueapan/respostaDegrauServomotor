@@ -1,13 +1,9 @@
-% plotRespostaPrealocando.m
+% plotRespostaPrealocando_matlab.m
 clear all
 close all
-pkg load instrument-control
 
 % Cria o objeto serial
-s = serial("COM7");
-set(s, 'baudrate', 115200);
-
-fopen(s);
+s = serialport("COM7", 115200);
 
 % Prealoca memória para o vetor de tempo e de velocidade
 N = 2000;
@@ -24,57 +20,51 @@ soma_buffer = sum(buffer);
 enc_res = 200
 
 % Define o tempo de execução em segundos
-tempoExecucao = 20; % 60 segundos
+tempoExecucao = 10; % 60 segundos
 
 % Obtém o tempo inicial
-tempoInicial = time();
+tempoInicial = datetime('now');
 
 % Inicia a leitura da porta serial
 i = 1;
 while true
-    if s.bytesavailable() > 0
+    if s.NumBytesAvailable
         % Lê a quantidade de passos registrados pelo encoder à partir do Arduino
-        enc_output = textscan(readline(s), "%n,%n");
-        passos = enc_output{1};
-        delta_tempo = enc_output{2}/1000;
-
-        tempoAtual = time();
-        tempo(i) = tempoAtual - tempoInicial;
+        passos = str2double(readline(s));
+        
+        tempoAtual = datetime('now');
+        tempo(i) = sec(tempoAtual - tempoInicial);
 
         mov_ang = (passos/enc_res) * 2 * pi; % Deslocamento angular em rad
-        disp(mov_ang);
-        if i == 1
-##            buffer(rem(i,M)) = mov_ang/delta_tempo; % O buffer na posição referente ao resto da divisão de i por M é a velocidade angular deste passo
-##            disp(buffer(rem(i,M)));
-        elseif i < M
-            buffer(rem(i,M)) = mov_ang/delta_tempo;
-            disp(buffer(rem(i,M)));
 
+        if i == 1
+            buffer(rem(i,M)) = mov_ang/tempo(i); % O buffer na posição referente ao resto da divisão de i por M é a velocidade angular deste passo
+        elseif rem(i,M) ~= 0
+            buffer(rem(i,M)) = mov_ang/(tempo(i) - tempo(i-1));
         else
-            buffer(rem(i,M) + 1) = mov_ang/delta_tempo;
-            disp(buffer(rem(i,M)+1));
+            buffer(rem(i,M) + 1) = mov_ang/(tempo(i) - tempo(i-1));
         end
 
         % Atualiza o vetor de velocidade a partir da média
         soma_buffer = sum(buffer);
         velocidade(i) = soma_buffer*inv_M;
-
+        
         % Adiciona ponto no gráfico de velocidade x tempo
         plot(tempo(1:i), velocidade(1:i));
         drawnow;
-
+        
         % Condição de parada: tempo de execução excedido
         if tempo(i) > tempoExecucao
             break;
         end
-
+        
         % Incrementa o índice
         i = i + 1;
     end
 end
 
 % Limpa o objeto serial
-fclose(s)
+clear s
 
 xlabel('Tempo (s)');
 ylabel('velocidade (rad/s)');
