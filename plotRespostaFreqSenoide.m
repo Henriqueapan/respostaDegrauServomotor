@@ -38,13 +38,18 @@ i = 1;
 while true
     if s.bytesavailable() > 0
         % Lê a quantidade de passos registrados pelo encoder à partir do Arduino
-        enc_output = textscan(readline(s), "%n,%n");
+        enc_output = textscan(readline(s), "%n, %n, %n");
         passos = enc_output{1};
         delta_tempo = enc_output{2}/1000;
         if i > 1
+            sin_input(i) = enc_output{3};
+            % tempoAtual = time();
             tempoAtual += delta_tempo;
+            % tempo(i) = tempoAtual - tempoInicial;
             tempo(i) = tempoAtual;
         endif
+
+
 
         mov_ang = (passos/enc_res) * 2 * pi; % Deslocamento angular em rad
         disp(mov_ang);
@@ -66,6 +71,8 @@ while true
 
         % Adiciona ponto no gráfico de velocidade x tempo
         plot(tempo(1:i), velocidade(1:i));
+        hold on;
+        plot(tempo(1:i), sin_input(1:i));
         drawnow;
 
         % Condição de parada: tempo de execução excedido
