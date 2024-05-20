@@ -20,13 +20,13 @@ M = 50;
 inv_M = 1/M;
 buffer = zeros(1, M);
 soma_buffer = sum(buffer);
-graphics_toolkit('gnuplot');
+graphics_toolkit('fltk');
 
 % Resolução do encoder
 enc_res = 200
 
 % Define o tempo de execução em segundos
-tempoExecucao = 20; % 60 segundos
+tempoExecucao = 1.2; % 60 segundos
 
 % Obtém o tempo inicial
 % tempoInicial = time();
@@ -36,6 +36,8 @@ sin_input = zeros(1, N);
 
 % Inicia a leitura da porta serial
 i = 1;
+figure(1);
+figure(2);
 while true
     if s.bytesavailable() > 0
         % Lê a quantidade de passos registrados pelo encoder à partir do Arduino
@@ -71,9 +73,12 @@ while true
         velocidade(i) = soma_buffer*inv_M;
 
         % Adiciona ponto no gráfico de velocidade x tempo
-        plot(tempo(1:i), velocidade(1:i));
-        hold on;
-        plot(tempo(1:i), sin_input(1:i));
+        figure(1);
+        plot(tempo(1:i), velocidade(1:i), 'b');
+        drawnow;
+        #hold on;
+        figure(2);
+        plot(tempo(1:i), sin_input(1:i), 'r');
         drawnow;
 
         % Condição de parada: tempo de execução excedido
