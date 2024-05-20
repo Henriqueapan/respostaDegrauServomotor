@@ -5,7 +5,7 @@ close all
 pkg load instrument-control
 
 % Cria o objeto serial
-s = serial("COM7");
+s = serial("/dev/ttyUSB0");
 set(s, 'baudrate', 115200);
 
 fopen(s);
@@ -16,16 +16,17 @@ tempo = zeros(1, N);
 velocidade = zeros(1, N);
 
 % Quantidade de posições no buffer de média móvel e o próprio buffer como array
-M = 8;
+M = 50;
 inv_M = 1/M;
 buffer = zeros(1, M);
 soma_buffer = sum(buffer);
+graphics_toolkit('gnuplot');
 
 % Resolução do encoder
 enc_res = 200
 
 % Define o tempo de execução em segundos
-tempoExecucao = 20; % 60 segundos
+tempoExecucao = 5e-1; % 60 segundos
 
 % Obtém o tempo inicial
 % tempoInicial = time();

@@ -1,17 +1,17 @@
 //#define PWM_PIN 9  // Define o pino PWM a ser usado
-#define PWM_PERIOD 9800  // Frequência PWM em Hertz
+#define PWM_PERIOD 10000  // Frequência PWM em Hertz
 #define AMPLITUDE 127  // Amplitude máxima do sinal PWM (0 a 255)
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
-#define chA 3 // Pino canal A do encoder
-#define chB 2 // Pino canal B do encoder
+#define chA 2 // Pino canal A do encoder
+#define chB 3 // Pino canal B do encoder
 
 int chA_antigo = 0;
 int chB_antigo = 0;
 volatile int contador = 0;
-unsigned long tempoAtual = 0;
-unsigned long tempoAnterior = 0;
+double tempoAtual = 0;
+double tempoAnterior = 0;
 
 void setup() {
   // Configuração do pino PWM
@@ -34,11 +34,11 @@ void loop() {
   if (tempoAtual <=60000){  // if Para acionar o motor por apenas 2500 millissegundos
 
     for (int i = 0; i < 360; i++) {
-      tempoAtual =millis();
+      tempoAtual = millis();
       // Convertendo graus para radianos
       float radianos = i * (PI / 180.0);
       // Calculando o valor do seno e mapeando para o intervalo de 0 a 255
-      int valor_pwm = (sin(radianos) * AMPLITUDE) + AMPLITUDE;  // A*sen() 
+      int valor_pwm = (sin(radianos) * AMPLITUDE/2) + 1.5*AMPLITUDE;  // A*sen()
       // Escrevendo o valor PWM no pino
       controlaMotor(0,1,valor_pwm);
       //Serial.println(valor_pwm);
@@ -77,7 +77,7 @@ void controlaMotor (bool in1, bool in2, float pwm){
     digitalWrite(MOTOR_PIN_1, HIGH);
     digitalWrite(MOTOR_PIN_2, LOW);
   }
-  analogWrite(MOTOR_ENABLE, pwm); 
+  analogWrite(MOTOR_ENABLE, pwm);
 }
 
 

@@ -1,5 +1,5 @@
-#define chA 3 // Pino canal A do encoder
-#define chB 2 // Pino canal B do encoder
+#define chA 2 // Pino canal A do encoder
+#define chB 3 // Pino canal B do encoder
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
@@ -11,7 +11,7 @@
 volatile int contador = 0;
 unsigned long tempoAtual;
 unsigned long tempoAnterior = 0;
-int interrupcao_atual =0;
+int interrupcao_atual = 0;
 int chA_antigo = 0;
 int chB_antigo = 0;
 float velocidade = 0;
@@ -49,7 +49,7 @@ void loop() {
     Serial.end();
   }
 
-  delay(10); 
+  delay(1); 
 }
 
 void leituraEncoder() {
