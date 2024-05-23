@@ -38,10 +38,7 @@ i = 0
 while True:
     if ser.in_waiting <= 0:
         continue
-    enc_output = ser.readline().decode("ascii")
-    print(enc_output)
-    enc_output = enc_output.rstrip("\n").rstrip("\r").rstrip().split(", ")
-    print(enc_output)
+    enc_output = ser.readline().decode("ascii").rstrip("\n").rstrip("\r").rstrip().split(", ")
     if len(enc_output) != 3 :
         continue
 
@@ -59,13 +56,9 @@ while True:
     tempo.append(tempo_atual)
 
     mov_ang = (passos/enc_res) * 2 * pi
-    print(mov_ang)
 
     buffer[i%M] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
-    # if i < M:
-    #     buffer[i%M] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
-    # elif i > 0 and i :
-    #     buffer[i%M + 1] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
+
 
     # Atualiza o vetor de velocidade a partir da média
     soma_buffer = sum(buffer)
@@ -76,7 +69,6 @@ while True:
     i += 1
 
 with open('./output/output.txt', 'w') as file:
-    # for velocidade, tempo in zip(velocidade, tempo):
     file.writelines([f'{str(velocidade)},{str(tempo)},{str(sin_input)}\n' for velocidade, tempo, sin_input in zip(velocidade, tempo, sin_input)])
     file.close()
 
