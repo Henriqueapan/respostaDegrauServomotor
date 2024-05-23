@@ -6,8 +6,6 @@ ser = serial.Serial(
     baudrate=115200,
     timeout=0
 )
-#ser.flush()
-#ser.open()
 
 # Lists tempo, velocidade e input de senóide
 tempo = list()
@@ -38,35 +36,37 @@ print("Conectando a porta: " + ser.portstr)
 i = 0
 
 while True:
-    if ser.in_waiting<=0:
+    if ser.in_waiting <= 0:
         continue
     enc_output = ser.readline().decode().split(", ")
     print(enc_output)
+
     if len(enc_output) != 3 :
         continue
+
     passos = float(enc_output[0])
     delta_tempo = float(enc_output[1])/1000
-    #print(delta_tempo)
 
-    if i > 0:
-        # Senóide de tensão de input baseada no duty cycle do PWM (de 0 a 255)
-        sin_input.append((float(enc_output[2])/255) * pico_tensao)
+    # if i > 0:
+    # Senóide de tensão de input baseada no duty cycle do PWM (de 0 a 255)
+    sin_input.append((float(enc_output[2])/255) * pico_tensao)
 
-        tempo_atual += delta_tempo
-        tempo.append(tempo_atual)
+    tempo_atual += delta_tempo
+    tempo.append(tempo_atual)
 
     mov_ang = (passos/enc_res) * 2 * pi
 
-    if i > 1 and i <= M:
-        buffer[i%M] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
-    elif i > 0:
-        buffer[i%M + 1] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
+    buffer[i%M] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
+    # if i < M:
+    #     buffer[i%M] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
+    # elif i > 0 and i :
+    #     buffer[i%M + 1] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
 
     # Atualiza o vetor de velocidade a partir da média
     soma_buffer = sum(buffer)
     velocidade.append(soma_buffer*inv_M)
 
-    if(i > 1 and tempo[i] > tempo_execucao): break
+    if(tempo[i] > tempo_execucao): break
 
     i += 1
 
