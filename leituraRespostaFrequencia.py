@@ -49,7 +49,7 @@ while True:
 
         # if i > 0:
         # Senóide de tensão de input baseada no duty cycle do PWM (de 0 a 255)
-        sin_input.append(((pwm/255) * pico_tensao) if pwm > 0 else sin_input[-1])
+        sin_input.append(((pwm/255) * pico_tensao) if pwm > 100 else sin_input[-1])
     except ValueError as e:
         continue
 
