@@ -27,7 +27,7 @@ enc_res = 200
 pico_tensao = 11.0
 
 # Tempo de execução em segundos
-tempo_execucao = 10
+tempo_execucao = 5
 
 # Variável de tempo atual
 tempo_atual = 0

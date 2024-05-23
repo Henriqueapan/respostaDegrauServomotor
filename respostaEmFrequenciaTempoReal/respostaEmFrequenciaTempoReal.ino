@@ -1,5 +1,5 @@
 //#define PWM_PIN 9  // Define o pino PWM a ser usado
-#define PWM_freq 1000 // Frequência em Hertz
+#define PWM_freq 100 // Frequência em Hertz
 #define AMPLITUDE 127  // Amplitude máxima do sinal PWM (0 a 255)
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
@@ -35,13 +35,13 @@ void setup() {
 
 void loop() {
   //tempoAtual =millis();
-  if (tempoAtual <=20000){  // if Para acionar o motor por apenas 2500 millissegundos
+  if (tempoAtual <=10000){  // if Para acionar o motor por apenas 2500 millissegundos
     tempoAtual = millis();
-    valor_pwm = (sin(2*PI*PWM_freq*tempoAtual*inv_mili));
-
+    valor_pwm = AMPLITUDE/2*(sin(2*PI*PWM_freq*tempoAtual))+AMPLITUDE*1.5;
+    
     // Escrevendo o valor PWM no pino
     controlaMotor(0,1,valor_pwm);
-
+    //Serial.println(valor_pwm, 10);
     Serial.println(String(contador) + ", " + String(tempoAtual-tempoAnterior) + ", "+ String(valor_pwm));
 
     contador = 0; // Reinicia o contador
