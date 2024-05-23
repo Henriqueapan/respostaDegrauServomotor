@@ -25,7 +25,7 @@ enc_res = 200
 pico_tensao = 11.0
 
 # Tempo de execução em segundos
-tempo_execucao = 10
+tempo_execucao = 5
 
 # Variável de tempo atual
 tempo_atual = 0
@@ -45,10 +45,11 @@ while True:
     try:
         passos = float(enc_output[0])
         delta_tempo = float(enc_output[1])/1000
+        pwm = float(enc_output[2])
 
         # if i > 0:
         # Senóide de tensão de input baseada no duty cycle do PWM (de 0 a 255)
-        sin_input.append((float(enc_output[2])/255) * pico_tensao)
+        sin_input.append(((pwm/255) * pico_tensao) if pwm > 0 else sin_input[-1])
     except ValueError as e:
         continue
 
