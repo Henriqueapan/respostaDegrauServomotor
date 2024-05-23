@@ -1,14 +1,22 @@
 clear all
 close all
 
-[vel, tempo, sin] = textread('./output/output.txt', "%f,%f,%f")
+files = dir('./output/*.txt')
 
+i = 1
 
-figure(1)
-plot(tempo, vel)
-xlabel("Tempo (s)");
-ylabel("Velocidade (rad/s)")
-figure(2)
-plot(tempo, sin)
-xlabel("Tempo(s)");
-ylabel("Tensão (V)");
+for file = files'
+  path = ['./output/' file.name]
+  [vel, tempo, sin] = textread(path, "%f,%f,%f")
+
+  figure(i)
+  i++
+  plot(tempo, vel)
+  xlabel("Tempo (s)");
+  ylabel("Velocidade (rad/s)")
+  figure(i)
+  i++
+  plot(tempo, sin)
+  xlabel("Tempo(s)");
+  ylabel("Tensão (V)");
+endfor
