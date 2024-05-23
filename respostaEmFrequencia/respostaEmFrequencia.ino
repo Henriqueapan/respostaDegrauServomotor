@@ -31,7 +31,7 @@ void setup() {
 
 void loop() {
   //tempoAtual =millis();
-  if (tempoAtual <=2000){  // if Para acionar o motor por apenas 2500 millissegundos
+  if (tempoAtual <=10000){  // if Para acionar o motor por apenas 2500 millissegundos
 
     for (int i = 0; i < 360; i++) {
       tempoAtual = millis();
@@ -57,7 +57,7 @@ void loop() {
     controlaMotor(0,0,0); 
     Serial.end();
   }
-  //delay(10);
+  delay(1);
 }
 
 void controlaMotor (bool in1, bool in2, float pwm){

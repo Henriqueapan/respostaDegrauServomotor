@@ -25,7 +25,7 @@ enc_res = 200
 pico_tensao = 11.0
 
 # Tempo de execução em segundos
-tempo_execucao = 1.2
+tempo_execucao = 10
 
 # Variável de tempo atual
 tempo_atual = 0
@@ -38,9 +38,10 @@ i = 0
 while True:
     if ser.in_waiting <= 0:
         continue
-    enc_output = ser.readline().decode().split(", ")
+    enc_output = ser.readline().decode("ascii")
     print(enc_output)
-
+    enc_output = enc_output.rstrip("\n").rstrip("\r").rstrip().split(", ")
+    print(enc_output)
     if len(enc_output) != 3 :
         continue
 
@@ -58,6 +59,7 @@ while True:
     tempo.append(tempo_atual)
 
     mov_ang = (passos/enc_res) * 2 * pi
+    print(mov_ang)
 
     buffer[i%M] = 0 if delta_tempo == 0 else mov_ang/delta_tempo
     # if i < M:

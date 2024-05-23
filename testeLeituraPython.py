@@ -8,10 +8,10 @@ ser = serial.Serial(
 
 time.sleep(1)
 i = 0
-# while True:
-#     if ser.in_waiting > 0:
-#         enc_output = ser.readline().decode("ascii")
-#         print(enc_output)
-while ser.in_waiting > 0:
-    enc_output = ser.readline().decode("ascii")
-    print(enc_output)
+while True:
+    if ser.in_waiting > 0:
+        enc_output = ser.readline().decode("ascii").rstrip("\n").rstrip("\r").rstrip().split(", ")
+        print(enc_output)
+# while ser.in_waiting > 0:
+#     enc_output = ser.readline().decode("ascii")
+#     print(enc_output)
