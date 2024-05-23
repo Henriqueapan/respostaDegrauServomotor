@@ -1,18 +1,23 @@
-#define chA 3 // Pino canal A do encoder
-#define chB 4 // Pino canal B do encoder
+#define chA 2 // Pino canal A do encoder
+#define chB 3 // Pino canal B do encoder
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 
 #define EncResolution 100
 #define pi 3.14159
+#define N 8
 
 volatile int contador = 0;
 unsigned long tempoAtual;
 unsigned long tempoAnterior = 0;
+int interrupcao_atual = 0;
 int chA_antigo = 0;
 int chB_antigo = 0;
 float velocidade = 0;
+float soma_contador = 0;
+float media_contador;
+float inv_N = 1/N;
 
 void setup() {
   pinMode(chA, INPUT);
@@ -30,14 +35,11 @@ void setup() {
 void loop() {
   tempoAtual = millis(); // atualiza o quanto tempo se passou desde o início
 
-  if (tempoAtual <=10000){  // if Para acionar o motor por apenas 2500 millissegundos
+  if (tempoAtual <=15000){  // if Para acionar o motor por apenas 2500 millissegundos
 
     controlaMotor(0,1,255); // Fazendo o motor girar em alguma direção na velocidade 255
 
-    //velocidade = ((float)contador/EncResolution)*2*pi*(1/(tempoAtual - tempoAnterior)); // Calcula a velocidade em rad/s
-    //Serial.println(velocidade); // Envia a velocidade calculada pelo serial
-
-    Serial.println(contador);
+    Serial.println(String(contador) + "," + String(tempoAtual-tempoAnterior));
     
     contador = 0; // Reinicia o contador
     tempoAnterior = tempoAtual; // Atualiza o tempo
@@ -47,7 +49,7 @@ void loop() {
     Serial.end();
   }
 
-  delay(10); 
+  delay(1); 
 }
 
 void leituraEncoder() {
@@ -81,11 +83,6 @@ void leituraEncoder() {
   chA_antigo = chA_atual;
   chB_antigo = chB_atual;
 
-  // if (digitalRead(chB) == digitalRead(chA)) {
-  //   contador++;
-  // } else {
-  //   contador--;
-  // }
 }
 
 void controlaMotor (bool in1, bool in2, float pwm){
@@ -107,18 +104,3 @@ void controlaMotor (bool in1, bool in2, float pwm){
   }
   analogWrite(MOTOR_ENABLE, pwm); 
 }
-
-// void leituraEncoder() {
-//   static int estadoAnterior = 0;
-//   int estadoAtual;
-
-//   estadoAtual = digitalRead(chA) << 1 | digitalRead(chB);
-//   int delta = estadoAtual - estadoAnterior;
-  
-//   if(delta == 1 || delta == -3)
-//     contador++;
-//   else if(delta == -1 || delta == 3)
-//     contador--;
-
-//   estadoAnterior = estadoAtual;
-// }

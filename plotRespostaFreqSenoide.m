@@ -10,6 +10,9 @@ set(s, 'baudrate', 115200);
 
 fopen(s);
 
+% Toolkit de plot
+graphics_toolkit('fltk');
+
 % Prealoca memória para o vetor de tempo e de velocidade
 N = 2000;
 tempo = zeros(1, N);
@@ -20,13 +23,15 @@ M = 50;
 inv_M = 1/M;
 buffer = zeros(1, M);
 soma_buffer = sum(buffer);
-graphics_toolkit('gnuplot');
 
 % Resolução do encoder
-enc_res = 200
+enc_res = 200;
+
+% Pico de tensão com PWM em 255
+pico_tensao = 11.0
 
 % Define o tempo de execução em segundos
-tempoExecucao = 5e-1; % 60 segundos
+tempoExecucao = 1.2; % 60 segundos
 
 % Obtém o tempo inicial
 % tempoInicial = time();
@@ -36,16 +41,28 @@ sin_input = zeros(1, N);
 
 % Inicia a leitura da porta serial
 i = 1;
+figure(1);
+xlabel('Tempo (s)');
+ylabel('Velocidade angular (rad/s)');
+figure(2);
+xlabel('Tempo (s)');
+ylabel('Tensão (V)');
 while true
     if s.bytesavailable() > 0
         % Lê a quantidade de passos registrados pelo encoder à partir do Arduino
-        enc_output = textscan(readline(s), "%n,%n");
+        enc_output = textscan(readline(s), "%n, %n, %n");
         passos = enc_output{1};
         delta_tempo = enc_output{2}/1000;
         if i > 1
+            % Senóide te tensão de input baseada no duty cycle do PWM (de 0 a 255)
+            sin_input(i) = (enc_output{3}/255) * pico_tensao;
+            % tempoAtual = time();
             tempoAtual += delta_tempo;
+            % tempo(i) = tempoAtual - tempoInicial;
             tempo(i) = tempoAtual;
         endif
+
+
 
         mov_ang = (passos/enc_res) * 2 * pi; % Deslocamento angular em rad
         disp(mov_ang);
@@ -66,7 +83,12 @@ while true
         velocidade(i) = soma_buffer*inv_M;
 
         % Adiciona ponto no gráfico de velocidade x tempo
-        plot(tempo(1:i), velocidade(1:i));
+        figure(1);
+        plot(tempo(1:i), velocidade(1:i), 'b');
+        drawnow;
+        #hold on;
+        figure(2);
+        plot(tempo(1:i), sin_input(1:i), 'r');
         drawnow;
 
         % Condição de parada: tempo de execução excedido
@@ -81,6 +103,3 @@ end
 
 % Limpa o objeto serial
 fclose(s)
-
-xlabel('Tempo (s)');
-ylabel('velocidade (rad/s)');

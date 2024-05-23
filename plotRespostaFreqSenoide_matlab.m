@@ -1,14 +1,11 @@
-warning('off', 'all');
+% warning('off', 'all');
 % plotRespostaPrealocando.m
 clear all
 close all
 pkg load instrument-control
 
 % Cria o objeto serial
-s = serial("/dev/ttyUSB0");
-set(s, 'baudrate', 115200);
-
-fopen(s);
+s = serialport("COM7", 115200);
 
 % Prealoca memória para o vetor de tempo e de velocidade
 N = 2000;
@@ -16,17 +13,16 @@ tempo = zeros(1, N);
 velocidade = zeros(1, N);
 
 % Quantidade de posições no buffer de média móvel e o próprio buffer como array
-M = 50;
+M = 8;
 inv_M = 1/M;
 buffer = zeros(1, M);
 soma_buffer = sum(buffer);
-graphics_toolkit('gnuplot');
 
 % Resolução do encoder
 enc_res = 200
 
 % Define o tempo de execução em segundos
-tempoExecucao = 5e-1; % 60 segundos
+tempoExecucao = 20; % 60 segundos
 
 % Obtém o tempo inicial
 % tempoInicial = time();
@@ -39,13 +35,18 @@ i = 1;
 while true
     if s.bytesavailable() > 0
         % Lê a quantidade de passos registrados pelo encoder à partir do Arduino
-        enc_output = textscan(readline(s), "%n,%n");
+        enc_output = textscan(readline(s), "%n, %n, %n");
         passos = enc_output{1};
         delta_tempo = enc_output{2}/1000;
         if i > 1
+            sin_input(i) = enc_output{3};
+            % tempoAtual = time();
             tempoAtual += delta_tempo;
+            % tempo(i) = tempoAtual - tempoInicial;
             tempo(i) = tempoAtual;
-        endif
+        end
+
+
 
         mov_ang = (passos/enc_res) * 2 * pi; % Deslocamento angular em rad
         disp(mov_ang);
@@ -67,6 +68,8 @@ while true
 
         % Adiciona ponto no gráfico de velocidade x tempo
         plot(tempo(1:i), velocidade(1:i));
+        hold on;
+        plot(tempo(1:i), sin_input(1:i));
         drawnow;
 
         % Condição de parada: tempo de execução excedido
@@ -80,7 +83,7 @@ while true
 end
 
 % Limpa o objeto serial
-fclose(s)
+clear s
 
 xlabel('Tempo (s)');
 ylabel('velocidade (rad/s)');
