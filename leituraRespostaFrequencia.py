@@ -75,7 +75,7 @@ while True:
 
 with open('./output/output.txt', 'w') as file:
     # for velocidade, tempo in zip(velocidade, tempo):
-    file.writelines([f'{str(velocidade)},{str(tempo)}' for velocidade, tempo in zip(velocidade, tempo)])
+    file.writelines([f'{str(velocidade)},{str(tempo)},{str(sin_input)}\n' for velocidade, tempo, sin_input in zip(velocidade, tempo, sin_input)])
     file.close()
 
 ser.close()
