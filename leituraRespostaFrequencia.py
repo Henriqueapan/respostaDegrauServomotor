@@ -6,6 +6,8 @@ ser = serial.Serial(
     baudrate=115200,
     timeout=0
 )
+ser.flush()
+ser.open()
 
 # Lists tempo, velocidade e input de senóide
 tempo = list()
@@ -67,4 +69,5 @@ with open('./output/output.txt', 'w') as file:
     file.writelines([f'{str(velocidade)},{str(tempo)}' for velocidade, tempo in zip(velocidade, tempo)])
     file.close()
 
+ser.close()
 exit(1)
