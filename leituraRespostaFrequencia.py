@@ -36,7 +36,7 @@ print("Conectando a porta: " + ser.portstr)
 i = 0
 
 while True:
-    enc_output = ser.readline().split(",")
+    enc_output = ser.readline().decode().split(",")
     passos = enc_output[0]
     delta_tempo = enc_output[1]/1000
 
