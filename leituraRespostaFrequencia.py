@@ -44,12 +44,15 @@ while True:
     if len(enc_output) != 3 :
         continue
 
-    passos = float(enc_output[0])
-    delta_tempo = float(enc_output[1])/1000
+    try:
+        passos = float(enc_output[0])
+        delta_tempo = float(enc_output[1])/1000
 
-    # if i > 0:
-    # Senóide de tensão de input baseada no duty cycle do PWM (de 0 a 255)
-    sin_input.append((float(enc_output[2])/255) * pico_tensao)
+        # if i > 0:
+        # Senóide de tensão de input baseada no duty cycle do PWM (de 0 a 255)
+        sin_input.append((float(enc_output[2])/255) * pico_tensao)
+    except ValueError as e:
+        continue
 
     tempo_atual += delta_tempo
     tempo.append(tempo_atual)
