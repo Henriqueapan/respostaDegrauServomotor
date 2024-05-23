@@ -1,4 +1,4 @@
-import serial
+import serial, datetime
 from math import pi
 
 ser = serial.Serial(
@@ -69,7 +69,7 @@ while True:
 
     i += 1
 
-with open('./output/output.txt', 'w') as file:
+with open(f'./output/output{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as file:
     file.writelines([f'{str(velocidade)},{str(tempo)},{str(sin_input)}\n' for velocidade, tempo, sin_input in zip(velocidade, tempo, sin_input)])
     file.close()
 
