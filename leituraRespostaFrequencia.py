@@ -1,4 +1,4 @@
-import serial, datetime
+import serial, datetime, time
 from math import pi
 
 ser = serial.Serial(
@@ -6,6 +6,8 @@ ser = serial.Serial(
     baudrate=115200,
     timeout=0
 )
+
+time.sleep(1.5)
 
 # Lists tempo, velocidade e input de senóide
 tempo = list()
