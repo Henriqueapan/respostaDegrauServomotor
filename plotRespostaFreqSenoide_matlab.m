@@ -44,7 +44,7 @@ while true
             tempoAtual += delta_tempo;
             % tempo(i) = tempoAtual - tempoInicial;
             tempo(i) = tempoAtual;
-        endif
+        end
 
 
 
