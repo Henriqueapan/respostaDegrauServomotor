@@ -1,5 +1,5 @@
 //#define PWM_PIN 9  // Define o pino PWM a ser usado
-#define PWM_PERIOD 1000  // Frequência PWM em Hertz
+#define PWM_freq 1000 // 
 #define AMPLITUDE 127  // Amplitude máxima do sinal PWM (0 a 255)
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
@@ -12,6 +12,7 @@ int chB_antigo = 0;
 volatile int contador = 0;
 double tempoAtual = 0;
 double tempoAnterior = 0;
+double PWM_PERIOD = ((1/PWM_freq)*1000)/360; // Periodo em millissegundos
 
 void setup() {
   // Configuração do pino PWM
@@ -31,7 +32,7 @@ void setup() {
 
 void loop() {
   //tempoAtual =millis();
-  if (tempoAtual <=10000){  // if Para acionar o motor por apenas 2500 millissegundos
+  if (tempoAtual <=20000){  // if Para acionar o motor por apenas 2500 millissegundos
 
     for (int i = 0; i < 360; i++) {
       tempoAtual = millis();
@@ -49,7 +50,8 @@ void loop() {
       contador = 0; // Reinicia o contador
       tempoAnterior = tempoAtual; // Atualiza o tempo
       // Pequeno atraso para a visualização
-      delayMicroseconds(PWM_PERIOD);
+      //delayMicroseconds(PWM_PERIOD);
+      delay(PWM_PERIOD);
     } // Fazendo o motor girar em alguma direção na velocidade 255
 
   }
@@ -57,7 +59,7 @@ void loop() {
     controlaMotor(0,0,0); 
     Serial.end();
   }
-  delay(1);
+  //delay(1);
 }
 
 void controlaMotor (bool in1, bool in2, float pwm){
