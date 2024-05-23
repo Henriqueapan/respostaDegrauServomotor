@@ -4,8 +4,8 @@
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
-#define chA 2 // Pino canal A do encoder
-#define chB 3 // Pino canal B do encoder
+#define chA 3 // Pino canal A do encoder
+#define chB 2 // Pino canal B do encoder
 
 int chA_antigo = 0;
 int chB_antigo = 0;

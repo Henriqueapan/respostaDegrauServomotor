@@ -5,7 +5,7 @@ close all
 pkg load instrument-control
 
 % Cria o objeto serial
-s = serial("/dev/ttyUSB0");
+s = serial("COM7");
 set(s, 'baudrate', 115200);
 
 fopen(s);
