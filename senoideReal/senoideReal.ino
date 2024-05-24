@@ -1,7 +1,7 @@
-#define PWM_FREQ 0.1
+#define PWM_FREQ 50
 
-volatile double tempoAtual = 0.0;
-volatile double tempoAnterior = 0.0;
+volatile unsigned long tempoAtual = 0.0;
+volatile unsigned long tempoAnterior = 0.0;
 volatile double valor_pwm;
 volatile double arg;
 int tuning_constant = 1;

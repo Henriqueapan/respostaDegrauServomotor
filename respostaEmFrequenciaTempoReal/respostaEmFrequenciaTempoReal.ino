@@ -11,8 +11,8 @@ volatile int chA_antigo = 0;
 volatile int chB_antigo = 0;
 volatile int contador = 0;
 volatile float valor_pwm = 0;
-volatile double tempoAtual = 0;
-volatile double tempoAnterior = 0;
+volatile unsigned long tempoAtual = 0;
+volatile unsigned long tempoAnterior = 0;
 volatile double arg;
 double radianos;
 float inv_micro = 1/1000000;
@@ -35,7 +35,7 @@ void loop() {
   if (tempoAtual <= 15*1000000) {
     tempoAtual = micros();
 
-    arg = TWO_PI * PWM_FREQ /*Hz*/ * double(tempoAtual)/(1000000);//*0.0000000001;
+    arg = TWO_PI * PWM_FREQ /*Hz*/ * double(tempoAtual)/(1000000);
 
     valor_pwm = ((127/2)*sin(arg)) + 1.5*127;
 
