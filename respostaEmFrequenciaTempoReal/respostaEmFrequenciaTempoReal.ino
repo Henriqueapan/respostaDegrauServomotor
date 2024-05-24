@@ -42,7 +42,7 @@ void loop() {
     // Escrevendo o valor PWM no pino
     controlaMotor(0,1,valor_pwm);
 
-    Serial.println(String(valor_pwm) + ", " + String((tempoAtual - tempoAnterior)) + ", "+ String(valor_pwm));
+    Serial.println(String(contador) + ", " + String((tempoAtual - tempoAnterior)) + ", "+ String(valor_pwm));
     
     contador = 0; // Reinicia o contador
     tempoAnterior = tempoAtual;
