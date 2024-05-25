@@ -15,9 +15,10 @@ volatile unsigned long tempoAtual = 0;
 volatile unsigned long tempoAnterior = 0;
 volatile double arg;
 double radianos;
-float inv_micro = 1/1000000;
+double inv_micro = 1/1000000.0;
 
 void setup() {
+  TCCR1B = (TCCR1B & 0xF8) | 0x01; // Configura a frequência PWM para 31.37kHz
   // Configuração do pino PWM
   pinMode(MOTOR_PIN_1, OUTPUT);
   pinMode(MOTOR_PIN_2, OUTPUT);
@@ -32,10 +33,10 @@ void setup() {
 }
 
 void loop() {
-  if (tempoAtual <= 15*1000000) {
+  if (tempoAtual <= 30*1000000) {
     tempoAtual = micros();
 
-    arg = TWO_PI * PWM_FREQ /*Hz*/ * double(tempoAtual)/(1000000);
+    arg = TWO_PI * PWM_FREQ /*Hz*/ * double(tempoAtual)*inv_micro;
 
     valor_pwm = ((127/2)*sin(arg)) + 1.5*127;
 
@@ -51,7 +52,7 @@ void loop() {
     controlaMotor(0,0,0); 
     Serial.end();
   }
-  delay(10);
+  //delay(10);
 }
 
 void controlaMotor (bool in1, bool in2, float pwm){

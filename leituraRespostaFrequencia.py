@@ -15,7 +15,7 @@ velocidade = list()
 sin_input = list()
 
 # Buffer de velocidade para cálculo de média móvel
-M = 50
+M = 10
 inv_M = 1/M
 buffer = [0] * M
 soma_buffer = sum(buffer)
@@ -27,7 +27,7 @@ enc_res = 200
 pico_tensao = 11.0
 
 # Tempo de execução em segundos
-tempo_execucao = 5
+tempo_execucao = 7
 
 # Variável de tempo atual
 tempo_atual = 0
@@ -41,12 +41,14 @@ while True:
     if ser.in_waiting <= 0:
         continue
     enc_output = ser.readline().decode("ascii").rstrip("\n").rstrip("\r").rstrip().split(", ")
-    if len(enc_output) != 3 :
+    if len(enc_output) != 3 and delta_tempo is not None:
+        tempo_atual += delta_tempo
         continue
+    elif len(enc_output) != 3: continue
 
     try:
         passos = float(enc_output[0])
-        delta_tempo = float(enc_output[1])/1000
+        delta_tempo = float(enc_output[1])/1000000
         pwm = float(enc_output[2])
 
         # if i > 0:
@@ -68,7 +70,7 @@ while True:
     velocidade.append(soma_buffer*inv_M)
 
     if(tempo[i] > tempo_execucao): break
-
+    print(format(tempo[i],'.2f'))
     i += 1
 
 with open(f'./output/output{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as file:

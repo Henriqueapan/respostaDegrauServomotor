@@ -1,5 +1,5 @@
-#define chA 2 // Pino canal A do encoder
-#define chB 3 // Pino canal B do encoder
+#define chA 3 // Pino canal A do encoder
+#define chB 2 // Pino canal B do encoder
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
@@ -85,22 +85,8 @@ void leituraEncoder() {
 
 }
 
-void controlaMotor (bool in1, bool in2, float pwm){
-  if (in1 == 1 && in2 == 0){
-    digitalWrite(MOTOR_PIN_1, HIGH);
-    digitalWrite(MOTOR_PIN_2, LOW);
-  }
-  else if (in1 == 0 && in2 == 1){
-    digitalWrite(MOTOR_PIN_1, LOW);
-    digitalWrite(MOTOR_PIN_2, HIGH);
-  }
-  else if (in1 == 0 && in2 == 0){
-    digitalWrite(MOTOR_PIN_1, LOW);
-    digitalWrite(MOTOR_PIN_2, LOW);
-  }
-  else if (in1 == 1 && in2 == 1){
-    digitalWrite(MOTOR_PIN_1, HIGH);
-    digitalWrite(MOTOR_PIN_2, LOW);
-  }
-  analogWrite(MOTOR_ENABLE, pwm); 
+void controlaMotor(bool in1, bool in2, float pwm) {
+  digitalWrite(MOTOR_PIN_1, in1);
+  digitalWrite(MOTOR_PIN_2, in2);
+  analogWrite(MOTOR_ENABLE, pwm);
 }
