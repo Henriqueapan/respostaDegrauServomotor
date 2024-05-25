@@ -1,5 +1,5 @@
 //#define PWM_PIN 9  // Define o pino PWM a ser usado
-#define PWM_FREQ 0.1 // Frequência em Hertz
+#define PWM_FREQ 7.5 // Frequência em Hertz
 #define AMPLITUDE 127  // Amplitude máxima do sinal PWM (0 a 255)
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)

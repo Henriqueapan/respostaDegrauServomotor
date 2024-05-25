@@ -15,7 +15,7 @@ velocidade = list()
 sin_input = list()
 
 # Buffer de velocidade para cálculo de média móvel
-M = 10
+M = 25
 inv_M = 1/M
 buffer = [0] * M
 soma_buffer = sum(buffer)
@@ -27,7 +27,7 @@ enc_res = 200
 pico_tensao = 11.0
 
 # Tempo de execução em segundos
-tempo_execucao = 7
+tempo_execucao = 30
 
 # Variável de tempo atual
 tempo_atual = 0
