@@ -15,7 +15,7 @@ velocidade = list()
 sin_input = list()
 
 # Buffer de velocidade para cálculo de média móvel
-M = 25
+M = 10
 inv_M = 1/M
 buffer = [0] * M
 soma_buffer = sum(buffer)
