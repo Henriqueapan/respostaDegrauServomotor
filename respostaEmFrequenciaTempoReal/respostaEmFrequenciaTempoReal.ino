@@ -9,17 +9,17 @@
 
 volatile int chA_antigo = 0;
 volatile int chB_antigo = 0;
-volatile int contador = 0;
+volatile int contador_passos_motor = 0;
 volatile float valor_pwm = 0;
-volatile unsigned long tempoAtual = 0;
-volatile unsigned long tempoAnterior = 0;
-volatile double arg;
+volatile unsigned long tempo_atual = 0;
+volatile unsigned long tempo_anterior = 0;
+volatile double arg_senoide;
 double radianos;
 double inv_micro = 1/1000000.0;
 
 void setup() {
   TCCR1B = (TCCR1B & 0xF8) | 0x01; // Configura a frequência PWM para 31.37kHz
-  // Configuração do pino PWM
+  // Configuração dos pinos
   pinMode(MOTOR_PIN_1, OUTPUT);
   pinMode(MOTOR_PIN_2, OUTPUT);
   pinMode(MOTOR_ENABLE, OUTPUT);
@@ -28,31 +28,34 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(chB), leituraEncoder, CHANGE);
   
-  // Configuração da frequência PWM
+  // Configuração da frequência de transmissão serial
   Serial.begin(115200);
 }
 
 void loop() {
-  if (tempoAtual <= 30*1000000) {
-    tempoAtual = micros();
+  if (tempo_atual <= 30*1000000) {
+    tempo_atual = micros();
 
-    arg = TWO_PI * PWM_FREQ /*Hz*/ * double(tempoAtual)*inv_micro;
+    // Argumento da função seno que gera a senoide no instante atual
+    arg_senoide = TWO_PI * PWM_FREQ /*Hz*/ * double(tempo_atual)*inv_micro;
 
-    valor_pwm = ((127/2)*sin(arg)) + 1.5*127;
+    // Valor do duty cycle do PWM calculado utiliando senoide
+    valor_pwm = ((127/2)*sin(arg_senoide)) + 1.5*127;
 
-    // Escrevendo o valor PWM no pino
+    // Escrevendo o valor do duty cycle do PWM no pino
     controlaMotor(0,1,valor_pwm);
 
-    Serial.println(String(contador) + ", " + String((tempoAtual - tempoAnterior)) + ", "+ String(valor_pwm));
+    // Imprimindo na saída serial os dados de quantidades de passos do eixo do motor, intervalo de tempo referente a esses passos e o valor
+    // do duty cycle do PWM no instante atual
+    Serial.println(String(contador_passos_motor) + ", " + String((tempo_atual - tempo_anterior)) + ", "+ String(valor_pwm));
     
-    contador = 0; // Reinicia o contador
-    tempoAnterior = tempoAtual;
+    contador_passos_motor = 0; // Reinicia o contador de passos do eixo do motor
+    tempo_anterior = tempo_atual; // Define a variável de controle para cálculo de variação de tempo tempo_anterior como o tempo atual
   }
-  else{ // Desliga o motor e para de enviar
+  else{ // Desliga o motor e para de enviar dados 
     controlaMotor(0,0,0); 
     Serial.end();
   }
-  //delay(10);
 }
 
 void controlaMotor (bool in1, bool in2, float pwm){
@@ -81,27 +84,27 @@ void leituraEncoder() {
   int chB_atual = digitalRead(chB);
 
   if (chA_antigo == 0 && chB_antigo == 0) {
-    if(chA_atual == 1 && chB_atual == 1) contador = contador + 2;
-    else if(chA_atual == 1 && chB_atual == 0) contador--;
-    else if(chA_atual == 0 && chB_atual == 1) contador++;
+    if(chA_atual == 1 && chB_atual == 1) contador_passos_motor = contador_passos_motor + 2;
+    else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor--;
+    else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor++;
   }
   else if (chA_antigo == 0 && chB_antigo == 1) {
-    if(chA_atual == 1 && chB_atual == 1) contador ++;
-    else if(chA_atual == 1 && chB_atual == 0) contador = contador - 2;
-    else if(chA_atual == 0 && chB_atual == 1) contador = contador;
-    else contador--;
+    if(chA_atual == 1 && chB_atual == 1) contador_passos_motor ++;
+    else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor = contador_passos_motor - 2;
+    else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor = contador_passos_motor;
+    else contador_passos_motor--;
   }
   else if (chA_antigo == 1 && chB_antigo == 0) {
-    if(chA_atual == 1 && chB_atual == 1) contador--;
-    else if(chA_atual == 1 && chB_atual == 0) contador = contador;
-    else if(chA_atual == 0 && chB_atual == 1) contador = contador - 2;
-    else contador ++;
+    if(chA_atual == 1 && chB_atual == 1) contador_passos_motor--;
+    else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor = contador_passos_motor;
+    else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor = contador_passos_motor - 2;
+    else contador_passos_motor ++;
   }
   else if (chA_antigo = 1 && chB_antigo == 1) {
-    if(chA_atual == 1 && chB_atual == 1) contador = contador;
-    else if(chA_atual == 1 && chB_atual == 0) contador++;
-    else if(chA_atual == 0 && chB_atual == 1) contador--;
-    else contador = contador + 2;
+    if(chA_atual == 1 && chB_atual == 1) contador_passos_motor = contador_passos_motor;
+    else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor++;
+    else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor--;
+    else contador_passos_motor = contador_passos_motor + 2;
   }
 
   chA_antigo = chA_atual;

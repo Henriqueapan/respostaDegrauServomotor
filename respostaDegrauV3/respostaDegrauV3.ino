@@ -32,13 +32,13 @@ void loop() {
 
     controlaMotor(0,1,255); // Fazendo o motor girar no sentido horário na velocidade 255
 
-    // Imprimindo na saída serial os dados de 
+    // Imprimindo na saída serial os dados de quantidades de passos do eixo do motor e intervalo de tempo referente a esses passos
     Serial.println(String(contador_passos_motor) + "," + String(tempo_atual-tempo_anterior));
     
-    contador_passos_motor = 0; // Reinicia o contador_passos_motor
-    tempo_anterior = tempo_atual; // Atualiza o tempo
+    contador_passos_motor = 0; // Reinicia o contador de passos do eixo do motor
+    tempo_anterior = tempo_atual; // Define a variável de controle para cálculo de variação de tempo tempo_anterior como o tempo atual
   }
-  else{ // Desliga o motor e para de enviar
+  else{ // Desliga o motor e para de enviar dados
     controlaMotor(0,0,0); 
     Serial.end();
   }
