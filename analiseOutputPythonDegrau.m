@@ -49,5 +49,8 @@ G = vel_inf * wn^2/(s^2 + 2*1*wn*s + wn^2)
 
 figure(1)
 step(G, .5)
+xlabel("Tempo (s)")
+ylabel("Velocidade (rad/s)")
+title("")
 figure(2)
 bode(G)
