@@ -8,7 +8,13 @@ MEAN_FILTER_WINDOW = 100;
 path = ['./output/outputDegrau/' FILENAME '.txt'];
 
 [vel, tempo] = textread(path, "%f,%f");
-vel = medfilt1(vel, MEAN_FILTER_WINDOW);
+
+% Aplicar filtro de média
+b = (1/MEAN_FILTER_WINDOW) * ones(1, MEAN_FILTER_WINDOW);
+a = 1;
+vel = filter(b, a, vel);
+
+% vel = medfilt1(vel, MEAN_FILTER_WINDOW);
 
 vel_inf_sum = 0;
 len_vel = length(vel);
@@ -32,5 +38,16 @@ endfor
 disp("Tempo de acomodação:")
 disp(settle_time)
 
+wn = 4.8/settle_time;
+
 disp("wn:")
-disp(4.8/settle_time)
+disp(wn)
+
+s = tf('s');
+
+G = vel_inf * wn^2/(s^2 + 2*1*wn*s + wn^2)
+
+figure(1)
+step(G, .5)
+figure(2)
+bode(G)

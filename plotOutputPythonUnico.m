@@ -2,10 +2,27 @@ clear all
 close all
 pkg load signal
 
-[vel, tempo] = textread('./output/output2024-05-25_12-41-44.txt', "%f,%f");
+[vel, tempo] = textread('./output/outputDegrau/output2024-05-25_12-55-46.txt', "%f,%f");
 
 janela_mediana = 100; % Tamanho da janela para o filtro de mediana
 janela_media = 100; % Tamanho da janela para o filtro de média
+
+tempo_maximo_de_plot = .5;
+idx_tempo_maximo_de_plot = Inf;
+
+for i=1:1:length(tempo)
+    if tempo(i) <= tempo_maximo_de_plot + .01 && tempo(i) >= tempo_maximo_de_plot - .01
+        idx_tempo_maximo_de_plot = i
+        break
+    endif
+endfor
+
+disp(idx_tempo_maximo_de_plot)
+
+if idx_tempo_maximo_de_plot ~= Inf
+    vel = vel(1:idx_tempo_maximo_de_plot)
+    tempo = tempo(1:idx_tempo_maximo_de_plot)
+endif
 
 % Aplicar filtro de mediana
 vel_filt_med = medfilt1(vel, janela_mediana);

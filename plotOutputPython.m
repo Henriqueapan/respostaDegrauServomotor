@@ -1,12 +1,12 @@
 clear all
 close all
 
-files = dir('./output/*.txt')#senoidesExtras/outputSenoides/
+files = dir('./output/outputSenoidesEscolhidas/*.txt')#senoidesExtras/outputSenoides/
 
 i = 1
 
 for file = files'
-  path = ['./output/' file.name]#senoidesExtras/outputSenoides/
+  path = ['./output/outputSenoidesEscolhidas/' file.name]#senoidesExtras/outputSenoides/
   [vel, tempo, sin] = textread(path, "%f,%f,%f")
 
 
