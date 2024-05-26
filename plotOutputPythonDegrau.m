@@ -1,12 +1,12 @@
 clear all
 close all
 
-files = dir('./output/*.txt')
+files = dir('./output/outputDegrau/*.txt')
 
 i = 1
 
 for file = files'
-  path = ['./output/' file.name]
+  path = ['./output/outputDegrau/' file.name]
   [vel, tempo] = textread(path, "%f,%f")
 
 
