@@ -62,7 +62,7 @@ set(h(2), 'LineWidth', 2)
 leg = legend('Resposta Experimental', 'Resposta Simulada do Modelo');
 legend('Location','east');
 
-title('');
+title('Respostas ao Degrau Experimental e Simulada usando a FTMA Modelada');
 
 # Comparação com modelo de frequência
 
@@ -93,4 +93,4 @@ set(h(2), 'LineWidth', 2)
 leg = legend('Resposta Experimental', 'Resposta Simulada do Modelo');
 legend('Location','southeast');
 
-title('');
+title('Respostas ao Degrau Experimental e Simulada usando a FTMA Modelada');
