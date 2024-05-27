@@ -7,7 +7,7 @@ pkg load signal
 janela_mediana = 100; % Tamanho da janela para o filtro de mediana
 janela_media = 100; % Tamanho da janela para o filtro de média
 
-tempo_maximo_de_plot = .5;
+tempo_maximo_de_plot = 2;
 idx_tempo_maximo_de_plot = Inf;
 
 for i=1:1:length(tempo)
