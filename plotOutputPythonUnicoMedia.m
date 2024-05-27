@@ -32,6 +32,7 @@ vel_filt_media = filter(b, a, vel);
 figure(1)
 plot(tempo, vel_filt_media);
 xlim([0 .5])
+ylim([-20 500])
 xlabel('Tempo (s)');
 ylabel('Velocidade (rad/s)');
 grid on;
