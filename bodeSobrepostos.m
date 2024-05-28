@@ -8,8 +8,11 @@ G = 20*log10(M);
 fase = (dt .* freqsReais) * 360;
 
 s = tf('s');
-Gteorico = 11504.73 / (s^2 + 43.37 * s + 470.24);
-[mag, phase, w] = bode(Gteorico, {0.4, 109});
+#Gteorico = 11504.73 / (s^2 + 43.37 * s + 470.24); #Criticamente amortecido
+#Gteorico = 44.69907407 / (0.06966136364* s + 1); #Primeira ordem
+Gteorico = 22 / (0.06966136364* s + 1); #Primeira ordem
+
+[mag, phase, w] = bode(Gteorico, {0.43, 109});
 mag = squeeze(mag);
 phase = squeeze(phase);
 
@@ -24,7 +27,7 @@ title('Diagrama de Bode - Magnitude');
 xlabel('Frequência (rad/s)');
 ylabel('Magnitude (dB)');
 legend('Diagrama de Bode Experimental', 'Diagrama de Bode Teórico');
-xlim([0.4, 109]);
+xlim([0.43, 109]);
 subplot(2, 1, 2);
 semilogx(freqsReais, -fase, 'b', 'LineWidth', 2);
 hold on;
@@ -35,4 +38,4 @@ title('Diagrama de Bode - Fase');
 xlabel('Frequência (rad/s)');
 ylabel('Fase (graus)');
 legend('Diagrama de Bode Experimental', 'Diagrama de Bode Teórico');
-xlim([0.4, 109]);
+xlim([0.43, 109]);
