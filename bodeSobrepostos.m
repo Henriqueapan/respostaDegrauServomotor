@@ -10,7 +10,9 @@ fase = (dt .* freqsReais) * 360;
 s = tf('s');
 #Gteorico = 11504.73 / (s^2 + 43.37 * s + 470.24); #Criticamente amortecido
 #Gteorico = 44.69907407 / (0.06966136364* s + 1); #Primeira ordem
-Gteorico = 22 / (0.06966136364* s + 1); #Primeira ordem
+#Gteorico = 22 / (0.06966136364* s + 1); #Primeira ordem chutando o ganho k
+Gteorico = (24.4*(10*12.024^2)) / ((s + 12.024)*(s+10*12.024)); #Super amortecido (chutando que o segundo polo está em uma freq 10 vezes maior que a primeira freq de quina)
+
 
 [mag, phase, w] = bode(Gteorico, {0.43, 109});
 mag = squeeze(mag);
