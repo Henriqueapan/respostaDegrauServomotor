@@ -4,8 +4,8 @@ pkg load signal
 
 [vel, tempo] = textread('./output/outputDegrau/output2024-05-25_12-55-46.txt', "%f,%f");
 
-janela_mediana = 100; % Tamanho da janela para o filtro de mediana
-janela_media = 100; % Tamanho da janela para o filtro de média
+janela_mediana = 10; % Tamanho da janela para o filtro de mediana
+janela_media = 10; % Tamanho da janela para o filtro de média
 
 tempo_maximo_de_plot = 5;
 idx_tempo_maximo_de_plot = Inf;
@@ -35,5 +35,10 @@ xlim([0 .5])
 ylim([-20 500])
 xlabel('Tempo (s)');
 ylabel('Velocidade (rad/s)');
+h = get(gca, 'Children');
+set(h(1), 'Color', 'b');
+set(h(1), 'LineWidth', 2);
 grid on;
 
+# Alterar conforme necessidade
+title('Resposta ao Degrau do Servomotor Obtida Experimentalmente');
