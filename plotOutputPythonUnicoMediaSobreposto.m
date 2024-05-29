@@ -22,7 +22,7 @@ for i=1:1:length(tempo1)
     endif
 endfor
 
-disp(idx_tempo_maximo_de_plot1)
+##disp(idx_tempo_maximo_de_plot1)
 
 if idx_tempo_maximo_de_plot1 ~= Inf
     vel1 = vel1(1:idx_tempo_maximo_de_plot1)
@@ -76,7 +76,11 @@ ylabel('Velocidade (rad/s)');
 grid on;
 hold on;
 
-Gfreq = (11504.73)/(s^2 + 43.37*s + 470.24);
+#Gfreq = (11504.73)/(s^2 + 43.37*s + 470.24); #Modelo considerando o sistema como criticamente amortecido
+Gfreq  = (24.4*(7*12.024^2)) / ((s + 12.024)*(s+7*12.024)); #Modelo considerando o sistema como superamortecido
+# tempo de subida = 0.15837 logo constante de tempo é 0.07198636364 então o polo está em -13.89151986
+##Gfreq = (485/10.8)/(0.07198636364*s+1); # Primeira ordem
+##Gfreq = (485/10.8)*(10*13.89151986^2)/((s+13.89151986)*(s+10*13.89151986)); # Superamortecido com um polo 10 vezes distante do outro kk
 
 step(10.8*Gfreq, .5);
 xlim([0 .5])

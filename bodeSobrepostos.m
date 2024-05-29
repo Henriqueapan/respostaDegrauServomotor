@@ -1,4 +1,6 @@
 pkg load control;
+clear all;
+##close all;
 
 M = [3.7 4.87 6.55 7.9 11.14 12.21 15.138 18.34 21.60 23.52 25.51 23.36 25.2 25.7 24.97 26.00];
 freqs = [25 17.5 10 7.5 6 5 3.5 2.5 1.5 1 0.75 0.5 0.35 0.25 0.175 0.1] * 2 * pi;
@@ -11,7 +13,7 @@ s = tf('s');
 #Gteorico = 11504.73 / (s^2 + 43.37 * s + 470.24); #Criticamente amortecido
 #Gteorico = 44.69907407 / (0.06966136364* s + 1); #Primeira ordem
 #Gteorico = 22 / (0.06966136364* s + 1); #Primeira ordem chutando o ganho k
-#Gteorico = (24.4*(10*12.024^2)) / ((s + 12.024)*(s+10*12.024)); #Super amortecido (chutando 2do polo em  freq 10 vezes maior que a primeira freq de quina)
+##Gteorico = (24.4*(10*12.024^2)) / ((s + 12.024)*(s+10*12.024)); #Super amortecido (chutando 2do polo em  freq 10 vezes maior que a primeira freq de quina)
 Gteorico = (24.4*(7*12.024^2)) / ((s + 12.024)*(s+7*12.024)); #Super amortecido (chutando 2do polo em freq 7 vezes maior que a primeira freq de quina)
 
 [mag, phase, w] = bode(Gteorico, {0.43, 109});
@@ -25,19 +27,35 @@ hold on;
 semilogx(w, 20*log10(mag), 'r', 'LineWidth', 2);
 hold off;
 grid on;
-title('Diagrama de Bode - Magnitude');
-xlabel('Frequência (rad/s)');
+title('Diagrama de Bode');
+##xlabel('Frequência (rad/s)');
 ylabel('Magnitude (dB)');
-legend('Diagrama de Bode Experimental', 'Diagrama de Bode Teórico');
-xlim([0.43, 109]);
+legend('Magnitude experimental', 'Magnitude teórica');
+legend('Location', 'southwest');
+xlim([0.439, 109]);
+
 subplot(2, 1, 2);
 semilogx(freqsReais, -fase, 'b', 'LineWidth', 2);
 hold on;
 semilogx(w, phase, 'r', 'LineWidth', 2);
 hold off;
 grid on;
-title('Diagrama de Bode - Fase');
+##title('Diagrama de Bode - Fase');
 xlabel('Frequência (rad/s)');
 ylabel('Fase (graus)');
-legend('Diagrama de Bode Experimental', 'Diagrama de Bode Teórico');
-xlim([0.43, 109]);
+legend('Fase experimental', 'Fase teórica');
+legend('Location', 'southwest');
+xlim([0.439, 109]);
+
+# Resposta ao degrau do modelo obtido a partir do diagrama de bode
+figure();
+step(10.8*Gteorico);
+xlim([0 0.5]);
+grid on;
+xlabel("Tempo (s)");
+ylabel("Velocidade (rad/s)");
+title("Resposta ao degrau do modelo obtido");
+h = get(gca, 'Children');
+set(h(1), 'Color', 'b');
+set(h(1), 'LineWidth', 2);
+
