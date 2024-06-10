@@ -33,19 +33,21 @@ while true
         passos = str2double(readline(s));
         
         tempoAtual = datetime('now');
-        tempo(i) = seconds(tempoAtual - tempoInicial);
+        tempo(i) = sec(tempoAtual - tempoInicial);
 
-        mov_ang = (passos/enc_res) * pi; % Deslocamento angular em rad
+        mov_ang = (passos/enc_res) * 2 * pi; % Deslocamento angular em rad
 
         if i == 1
             buffer(rem(i,M)) = mov_ang/tempo(i); % O buffer na posição referente ao resto da divisão de i por M é a velocidade angular deste passo
-        else
+        elseif rem(i,M) ~= 0
             buffer(rem(i,M)) = mov_ang/(tempo(i) - tempo(i-1));
+        else
+            buffer(rem(i,M) + 1) = mov_ang/(tempo(i) - tempo(i-1));
         end
 
         % Atualiza o vetor de velocidade a partir da média
         soma_buffer = sum(buffer);
-        velocidade(i) = soma_buffer*inv_N;
+        velocidade(i) = soma_buffer*inv_M;
         
         % Adiciona ponto no gráfico de velocidade x tempo
         plot(tempo(1:i), velocidade(1:i));
