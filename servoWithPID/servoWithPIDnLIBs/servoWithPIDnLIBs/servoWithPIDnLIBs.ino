@@ -48,7 +48,9 @@ void setup() {
 }
 
 void loop() {
-  // Não deve ser necessário obter o tempo atual no loop. Isso é feito no interrupt do Timer1
+  // Não deve ser necessário obter o tempo atual no loop. Isso é feito no interrupt do Timer1.
+  // Aqui isso é feito apenas para fins de testes, visando limitar o intervalo de tempo de teste do motor
+  // e evitando desgaste desnecessário do rolamento.
   tempo_atual = micros(); // Atualiza o quanto tempo se passou desde o início
 
   if (tempo_atual <= 5 * 1000000) {
