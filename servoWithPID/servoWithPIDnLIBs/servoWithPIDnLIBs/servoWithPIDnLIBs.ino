@@ -3,6 +3,7 @@
 
 #define chA 2 // Pino canal A do encoder
 #define chB 3 // Pino canal B do encoder
+// #define REFERENCIA_PIN A0
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
@@ -27,6 +28,15 @@ volatile double tempo_atual;
 volatile double tempo_anterior = 0.;
 volatile double posicao_atual = 0.0;
 volatile double posicao_anterior = 0.0;
+volatile float saida_controlador_atual = 0.0;
+volatile float saida_controlador_anterior = 0.0;
+volatile float saida_controlador_ante_anterior = 0.0;
+bool existe_saida_anterior = false;
+volatile float erro_atual = 0.0;
+volatile float erro_anterior = 0.0;
+volatile float erro_ante_anterior = 0.0;
+bool existe_erro_anterior = false;
+volatile float posicao_referencia;
 int idx_velocidade;
 
 void setup() {
@@ -35,6 +45,7 @@ void setup() {
 
   pinMode(chA, INPUT);
   pinMode(chB, INPUT);
+  // pinMode(REFERENCIA_PIN, INPUT);
   pinMode(MOTOR_PIN_1, OUTPUT);
   pinMode(MOTOR_PIN_2, OUTPUT);
   pinMode(MOTOR_ENABLE, OUTPUT);
@@ -45,6 +56,9 @@ void setup() {
   for(int j = 0; j < JANELA_MEDIA_MOVEL; j++) {
     arr_velocidade[j] = 0;
   }
+
+  // Definindo valor de teste para posicao_referencia
+  posicao_referencia = DEG_TO_RAD*125;
 }
 
 void loop() {
@@ -53,10 +67,12 @@ void loop() {
   // e evitando desgaste desnecessário do rolamento.
   tempo_atual = micros(); // Atualiza o quanto tempo se passou desde o início
 
+  // controlaMotor()
+
   if (tempo_atual <= 5 * 1000000) {
     controlaMotor(0, 1, 255);
-    Serial.println(String(RAD_TO_DEG*posicao_atual, 5));
-    // Serial.println(String(velocidade, 20));
+    // Serial.println(String(RAD_TO_DEG*posicao_atual, 5));
+    Serial.println(String(saida_controlador_atual, 7));
   }
   else { // Desliga o motor e para de enviar dados
     controlaMotor(0,0,0); 
@@ -104,4 +120,25 @@ void registraPosicaoAtual(double vel_atual) {
   if (posicao_atual > TWO_PI) posicao_atual = posicao_atual - TWO_PI;
 
   posicao_anterior = posicao_atual;
+}
+
+int calculaSaidaControladorAtual() {
+  erro_atual = posicao_atual - posicao_referencia;
+
+  saida_controlador_atual =
+    1.997 * saida_controlador_anterior
+    - 0.997 * saida_controlador_ante_anterior
+    + 0.0000328 * erro_atual
+    + 0.0000656 * erro_ante_anterior
+    + 0.0000328 * erro_ante_anterior;
+
+  // if (!existe_saida_anterior) saida_controlador_anterior = saida_controlador_atual;
+
+  saida_controlador_ante_anterior = saida_controlador_anterior;
+  saida_controlador_anterior = saida_controlador_atual;
+
+  // if (!existe_erro_anterior) erro_anterior = erro_atual;
+
+  erro_ante_anterior = erro_anterior;
+  erro_anterior = erro_atual;
 }
