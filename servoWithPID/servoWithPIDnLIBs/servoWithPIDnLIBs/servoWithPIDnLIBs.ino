@@ -18,6 +18,7 @@ float INV_PERIODO_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
 float INV_JANELA_MEDIA_MOVEL = 1.0/JANELA_MEDIA_MOVEL;
 float INV_RESOLUCAO_ENCODER = 1.0/RESOLUCAO_ENCODER;
 float COEF_EQ_DIFERENCAS_POSICAO = (PERIODO_AMOSTRAGEM/2) * INV_MICRO;
+int direcao_rotacao_atual;
 volatile int contador_passos_motor = 0;
 volatile int contador_idx_vetor_velocidade = 0;
 volatile double delta_tempo;
@@ -66,19 +67,22 @@ void loop() {
   // Aqui isso é feito apenas para fins de testes, visando limitar o intervalo de tempo de teste do motor
   // e evitando desgaste desnecessário do rolamento.
   tempo_atual = micros(); // Atualiza o quanto tempo se passou desde o início
+  calculaSaidaControladorAtual();
 
-  // controlaMotor()
+  direcao_rotacao_atual = saida_controlador_atual >= 0 ? 0 : 1;
 
-  if (tempo_atual <= 5 * 1000000) {
-    controlaMotor(0, 1, 255);
-    calculaSaidaControladorAtual();
-    // Serial.println(String(RAD_TO_DEG*posicao_atual, 5));
-    Serial.println(String(saida_controlador_atual, 7));
-  }
-  else { // Desliga o motor e para de enviar dados
-    controlaMotor(0,0,0); 
-    Serial.end();
-  }
+  controlaMotor(direcao_rotacao_atual, abs(saida_controlador_atual));
+
+  // if (tempo_atual <= .005 * 1000000) {
+  //   controlaMotor(0, 1, 255);
+  //   // Serial.println(String(RAD_TO_DEG*posicao_atual, 5));
+  //   Serial.println(String(saida_controlador_atual, 7));
+  // }
+  // else { // Desliga o motor e para de enviar dados
+  //   controlaMotor(0,0,0);
+  //   Serial.println(String(saida_controlador_atual, 7));
+  //   // Serial.end();
+  // }
 }
 
 void calculaERegistraVel(void) {
@@ -109,9 +113,9 @@ void calculaERegistraVel(void) {
   myEnc.write(0);
 }
 
-void controlaMotor(bool in1, bool in2, float pwm) {
-  digitalWrite(MOTOR_PIN_1, in1);
-  digitalWrite(MOTOR_PIN_2, in2);
+void controlaMotor(int pos, float pwm) {
+  digitalWrite(MOTOR_PIN_1, pos == 0 ? 1 : 0);
+  digitalWrite(MOTOR_PIN_2, pos == 0 ? 0 : 1);
   analogWrite(MOTOR_ENABLE, pwm);
 }
 
@@ -132,6 +136,9 @@ void calculaSaidaControladorAtual() {
     + 0.0000328 * erro_atual
     + 0.0000656 * erro_ante_anterior
     + 0.0000328 * erro_ante_anterior;
+
+  if (abs(saida_controlador_atual) >= 255)
+    saida_controlador_atual = saida_controlador_atual > 0 ? 255 : -255;
 
   // if (!existe_saida_anterior) saida_controlador_anterior = saida_controlador_atual;
 
