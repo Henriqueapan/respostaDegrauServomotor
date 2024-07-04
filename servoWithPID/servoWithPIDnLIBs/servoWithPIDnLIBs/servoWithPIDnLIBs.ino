@@ -71,6 +71,7 @@ void loop() {
 
   if (tempo_atual <= 5 * 1000000) {
     controlaMotor(0, 1, 255);
+    calculaSaidaControladorAtual();
     // Serial.println(String(RAD_TO_DEG*posicao_atual, 5));
     Serial.println(String(saida_controlador_atual, 7));
   }
@@ -122,7 +123,7 @@ void registraPosicaoAtual(double vel_atual) {
   posicao_anterior = posicao_atual;
 }
 
-int calculaSaidaControladorAtual() {
+void calculaSaidaControladorAtual() {
   erro_atual = posicao_atual - posicao_referencia;
 
   saida_controlador_atual =
