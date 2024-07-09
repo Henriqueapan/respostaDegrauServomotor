@@ -8,8 +8,8 @@
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 #define JANELA_MEDIA_MOVEL 1
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
-#define PERIODO_AMOSTRAGEM 200 // Microssegundos
-#define PERIODO_ACAO_DE_CONTROLE 100 // Microssegundos
+#define PERIODO_AMOSTRAGEM 300 // Microssegundos
+#define PERIODO_ACAO_DE_CONTROLE 200 // Microssegundos
 #define INV_MICRO .000001
 #define CONSTANTE_GANHO_CONTROLADOR .04
 
@@ -23,6 +23,7 @@ volatile unsigned long tempo_anterior_leitura_encoder = 0;
 volatile double velocidade_atual;
 volatile double erro_atual = 0.0;
 volatile double saida_controlador = 0.0;
+double delta_tempo_leitura_encoder;
 double velocidade_referencia;
 
 enum DirecaoRotacaoMotor {
@@ -51,7 +52,7 @@ void setup() {
 }
 
 void loop() {
-    Serial.println(String(velocidade_atual, 10) + "//" + String(saida_controlador, 10));
+    Serial.println(String(velocidade_atual, 10) + "//" + String(saida_controlador, 10) + "//" + String(delta_tempo_leitura_encoder, 20));
 }
 
 void leituraEncoder(void) {
@@ -63,11 +64,11 @@ void leituraEncoder(void) {
     contador_passos_motor ++;
 
     tempo_atual_leitura_encoder = micros();
-    unsigned long delta_tempo = (tempo_atual_leitura_encoder - tempo_anterior_leitura_encoder);
+    delta_tempo_leitura_encoder = ((double)tempo_atual_leitura_encoder - (double)tempo_anterior_leitura_encoder);
 
-    if(delta_tempo >= PERIODO_AMOSTRAGEM) { // Calcula a velocidade caso o período de amostragem já tenha ocorrido
+    if(delta_tempo_leitura_encoder >= PERIODO_AMOSTRAGEM) { // Calcula a velocidade caso o período de amostragem já tenha ocorrido
         double mov_ang = ((double)contador_passos_motor*(double)INV_RESOLUCAO_ENCODER) * TWO_PI;
-        velocidade_atual = (mov_ang/(double)delta_tempo) * INV_MICRO;
+        velocidade_atual = (mov_ang/(double)delta_tempo_leitura_encoder) * INV_MICRO;
 
         tempo_anterior_leitura_encoder = tempo_atual_leitura_encoder;
     }
