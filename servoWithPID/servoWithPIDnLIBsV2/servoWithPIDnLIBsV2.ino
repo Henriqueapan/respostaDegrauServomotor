@@ -13,11 +13,15 @@
 #define INV_MICRO .000001
 #define CONSTANTE_GANHO_CONTROLADOR .04
 
-float INV_PERIODO_AMOSTRAGEM = 1/PERIODO_AMOSTRAGEM;
-float INV_JANELA_MEDIA_MOVEL = 1/JANELA_MEDIA_MOVEL;
-float INV_RESOLUCAO_ENCODER = 1/RESOLUCAO_ENCODER;
+double INV_PERIODO_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
+double INV_RESOLUCAO_ENCODER = 1.0/RESOLUCAO_ENCODER;
+float INV_JANELA_MEDIA_MOVEL = 1.0/JANELA_MEDIA_MOVEL;
 float posicao_referencia;
 volatile int contador_passos_motor = 0;
+volatile int chA_atual;
+volatile int chB_atual;
+volatile int chA_antigo = 0;
+volatile int chB_antigo = 0;
 volatile unsigned long tempo_atual_leitura_encoder;
 volatile unsigned long tempo_anterior_leitura_encoder = 0;
 volatile double velocidade_atual;
@@ -39,7 +43,8 @@ void setup() {
     pinMode(MOTOR_PIN_2, OUTPUT);
     pinMode(MOTOR_ENABLE, OUTPUT);
 
-    attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, RISING);
+    attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(chB), leituraEncoder, CHANGE);
 
     Serial.begin(115200);
 
@@ -57,21 +62,58 @@ void loop() {
 
 void leituraEncoder(void) {
     /*
-    Função que incrementa o contador de passos do eixo do motor
+    Função que atualiza o contador de passos do eixo do motor
     e calcula a velocidade caso o período de amostragem já tenha
     passado
     */
-    contador_passos_motor ++;
+    atualizaContagemDePassosMotor();
 
     tempo_atual_leitura_encoder = micros();
     delta_tempo_leitura_encoder = ((double)tempo_atual_leitura_encoder - (double)tempo_anterior_leitura_encoder);
 
     if(delta_tempo_leitura_encoder >= PERIODO_AMOSTRAGEM) { // Calcula a velocidade caso o período de amostragem já tenha ocorrido
         double mov_ang = ((double)contador_passos_motor*(double)INV_RESOLUCAO_ENCODER) * TWO_PI;
-        velocidade_atual = (mov_ang/(double)delta_tempo_leitura_encoder) * INV_MICRO;
+        velocidade_atual = (mov_ang/(double)delta_tempo_leitura_encoder) * 1000000;
 
+        contador_passos_motor = 0;
         tempo_anterior_leitura_encoder = tempo_atual_leitura_encoder;
     }
+}
+
+void atualizaContagemDePassosMotor(void) {
+    /*
+    Função que atualiza (incrementa ou decrementa) o contador de passos do eixo do motor
+    com base nos valores atuais e anteriores assumidos pelos canais A e B
+    */
+    int chA_atual = digitalRead(chA);
+    int chB_atual = digitalRead(chB);
+
+    if (chA_antigo == 0 && chB_antigo == 0) {
+        if(chA_atual == 1 && chB_atual == 1) contador_passos_motor = contador_passos_motor + 2;
+        else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor--;
+        else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor++;
+    }
+    else if (chA_antigo == 0 && chB_antigo == 1) {
+        if(chA_atual == 1 && chB_atual == 1) contador_passos_motor ++;
+        else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor = contador_passos_motor - 2;
+        else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor = contador_passos_motor;
+        else contador_passos_motor--;
+    }
+    else if (chA_antigo == 1 && chB_antigo == 0) {
+        if(chA_atual == 1 && chB_atual == 1) contador_passos_motor--;
+        else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor = contador_passos_motor;
+        else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor = contador_passos_motor - 2;
+        else contador_passos_motor ++;
+    }
+    else if (chA_antigo = 1 && chB_antigo == 1) {
+        if(chA_atual == 1 && chB_atual == 1) contador_passos_motor = contador_passos_motor;
+        else if(chA_atual == 1 && chB_atual == 0) contador_passos_motor++;
+        else if(chA_atual == 0 && chB_atual == 1) contador_passos_motor--;
+        else contador_passos_motor = contador_passos_motor + 2;
+    }
+
+    chA_antigo = chA_atual;
+    chB_antigo = chB_atual;
 }
 
 void realizaAcaoDeControle(void) {
