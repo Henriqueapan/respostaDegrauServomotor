@@ -10,7 +10,7 @@
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
-#define PERIODO_AMOSTRAGEM 10000 // Microssegundos
+#define PERIODO_AMOSTRAGEM 1000 // Microssegundos
 #define INV_MICRO .000001
 
 volatile int contador_passos = 0;
@@ -20,7 +20,7 @@ double INV_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
 volatile double erro = 0;
 volatile float ref = 0;
 volatile float saida_controle = 0;
-double K = 0.05;
+double K = 0.8;
 
 void setup() {
   Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -40,8 +40,8 @@ Encoder myEnc(chA, chB);
 
 void loop() {
     // Serial.println(String(contador_passos));
-    // Serial.println("ref: " + String(ref) + " / " + "erro: " +  String(erro) + " / " + "vel: " +  String(velocidade) + " / " + "PWM: " + String(saida_controle));
-    Serial.println(String(ref) + " / " + String(erro) + " / " + String(velocidade));
+    Serial.println("ref: " + String(ref) + " / " + "erro: " +  String(erro) + " / " + "vel: " +  String(velocidade) + " / " + "PWM: " + String(saida_controle));
+    // Serial.println(String(ref) + " / " + String(erro) + " / " + String(velocidade));
 }
 
 void interrupcao(){
@@ -59,7 +59,7 @@ void leituraEncoder(){
 void controlador(){
     ref = mapFloat(analogRead(REFERENCIA_PIN), 0, 1020, 0, 500);
     erro = ref - velocidade;
-    saida_controle = erro * K ;
+    saida_controle = erro * K;
 }
 
 void atualizarPWM(){

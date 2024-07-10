@@ -10,17 +10,17 @@
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
-#define PERIODO_AMOSTRAGEM 2000 // Microssegundos
+#define PERIODO_AMOSTRAGEM 1000 // Microssegundos
 #define INV_MICRO .000001
 
 volatile int contador_passos = 0;
 volatile double velocidade = 0;
-double INV_RESOLUCAO = 1.0/RESOLUCAO_ENCODER;
-double INV_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
+double INV_RESOLUCAO = 1.0/(double)RESOLUCAO_ENCODER;
+double INV_AMOSTRAGEM = 1.0/(double)PERIODO_AMOSTRAGEM;
 volatile double erro = 0;
-volatile float ref = 0;
-volatile float saida_controle = 0;
-double K = 0.04;
+volatile double ref = 0;
+volatile double saida_controle = 0;
+double K = 0.036899;
 
 double COEF_EQ_DIFERENCAS_POSICAO = (PERIODO_AMOSTRAGEM/2) * INV_MICRO;
 volatile double velocidade_anterior = 0;
@@ -92,11 +92,13 @@ void controladorPOS(){
 void controladorPOS2(){
     ref = mapFloat(analogRead(REFERENCIA_PIN), 0, 1020, 0, TWO_PI);
     erro = ref - posicao;  
-    saida_controle = 0.567* K * PERIODO_AMOSTRAGEM * erro + 0.433 * K * PERIODO_AMOSTRAGEM * erro_anterior - saida_controle_anterior;
+    // saida_controle = 0.567* K * PERIODO_AMOSTRAGEM * erro + 0.433 * K * PERIODO_AMOSTRAGEM * erro_anterior - saida_controle_anterior;
+    // saida_controle = (0.24237 * (1 + 0.134 * INV_AMOSTRAGEM) * posicao + 0.24237 * (1 - 0.134 * INV_AMOSTRAGEM) * posicao_anterior) - saida_controle_anterior;
+    saida_controle = K * ((1 + 0.22 * INV_AMOSTRAGEM) * erro + (1 - 0.22 * INV_AMOSTRAGEM) * erro_anterior) - saida_controle_anterior;
 }
 
 void atualizarPWM(){
-    // saida_controle = saida_controle * 255;
+    saida_controle = saida_controle * 255;
     if (saida_controle <= 0){
         direcao = DirecaoRotacaoMotor::ESQUERDA;
         controlaMotor(direcao, abs(saida_controle));
@@ -112,7 +114,7 @@ void atualizarMemorias(){
     posicao_anterior = posicao;
     saida_controle_anterior = saida_controle;
     // velocidade_ante_anterior = velocidade_anterior;
-    // erro_anterior = erro;
+    erro_anterior = erro;
     // erro_ante_anterior = erro_anterior;
     myEnc.write(0);
 }
@@ -134,11 +136,12 @@ void controlaMotor(enum DirecaoRotacaoMotor direcao, int valor_pwm) {
             digitalWrite(MOTOR_PIN_2, 0);
             break;
     }
+    valor_pwm = constrain(abs(valor_pwm), 0, 255);
     analogWrite(MOTOR_ENABLE, valor_pwm);
 }
 
 void integrador(double vel_atual) {
-  posicao = posicao_anterior + COEF_EQ_DIFERENCAS_POSICAO*vel_atual + COEF_EQ_DIFERENCAS_POSICAO*velocidade_anterior;
+  posicao = posicao_anterior + COEF_EQ_DIFERENCAS_POSICAO * vel_atual + COEF_EQ_DIFERENCAS_POSICAO * velocidade_anterior;
   if (posicao > TWO_PI){
     posicao = posicao - TWO_PI;
   } 

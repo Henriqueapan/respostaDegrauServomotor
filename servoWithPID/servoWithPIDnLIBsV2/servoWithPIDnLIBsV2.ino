@@ -11,9 +11,9 @@
 #define JANELA_MEDIA_MOVEL 1
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
 #define PERIODO_AMOSTRAGEM 300 // Microssegundos
-#define PERIODO_ACAO_DE_CONTROLE 500 // Microssegundos
+#define PERIODO_ACAO_DE_CONTROLE 1000 // Microssegundos
 #define INV_MICRO .000001
-#define CONSTANTE_GANHO_CONTROLADOR .7
+#define CONSTANTE_GANHO_CONTROLADOR 0.036899
 
 double INV_PERIODO_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
 double INV_RESOLUCAO_ENCODER = 1.0/RESOLUCAO_ENCODER;
@@ -34,12 +34,12 @@ double velocidade_referencia;
 
 double COEF_EQ_DIFERENCAS_POSICAO = (PERIODO_AMOSTRAGEM/2) * INV_MICRO;
 volatile double velocidade_anterior = 0;
-volatile double velocidade_ante_anterior = 0;
 volatile double erro_anterior = 0;
 volatile double erro_ante_anterior = 0;
 volatile double posicao = 0;
 volatile double posicao_anterior = 0;
-volatile double posicao_ante_anterior = 0;
+volatile double saida_controle_anterior = 0;
+
 
 enum DirecaoRotacaoMotor {
     ESQUERDA,
@@ -68,7 +68,7 @@ void setup() {
 }
 
 void loop() {
-    // Serial.println(String(erro_atual) + "//" + String(velocidade_atual) + "//" + String(saida_controlador,3) + "//" + String(delta_tempo_leitura_encoder));
+    Serial.println(String(erro_atual) + "//" + String(velocidade_atual) + "//" + String(saida_controlador*255,3));
 }
 
 void leituraEncoder(void) {
@@ -132,8 +132,13 @@ void realizaAcaoDeControle(void) {
     // erro_atual = velocidade_atual - velocidade_referencia;
     posicao_referencia = mapFloat(analogRead(REFERENCIA_PIN), 0, 1020, 0, TWO_PI);
     erro_atual = posicao - posicao_referencia;
-    saida_controlador = abs(erro_atual * CONSTANTE_GANHO_CONTROLADOR);
-
+    //saida_controlador = abs(erro_atual * CONSTANTE_GANHO_CONTROLADOR);
+    // saida_controlador = 0.567* CONSTANTE_GANHO_CONTROLADOR * PERIODO_AMOSTRAGEM * erro_atual + 0.433 * CONSTANTE_GANHO_CONTROLADOR * PERIODO_AMOSTRAGEM * erro_anterior - saida_controle_anterior;
+    // saida_controle_anterior = saida_controlador;
+    // saida_controlador = CONSTANTE_GANHO_CONTROLADOR * ((1 + 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_atual + (1 - 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_anterior) - saida_controle_anterior;
+    saida_controlador = 0.273 * saida_controle_anterior + 11.4 * erro_atual - 9.14 * erro_anterior;
+    saida_controle_anterior = saida_controlador;
+    erro_anterior = erro_atual;
     controlaMotor(erro_atual > 0 ? ESQUERDA : DIREITA, saida_controlador * 255);
 }
 
