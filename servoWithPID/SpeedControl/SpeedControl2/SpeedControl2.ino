@@ -20,7 +20,7 @@ double INV_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
 volatile double erro = 0;
 volatile float ref = 0;
 volatile float saida_controle = 0;
-double K = 0.7;
+double K = 0.05;
 
 void setup() {
   Timer1.initialize(PERIODO_AMOSTRAGEM);
