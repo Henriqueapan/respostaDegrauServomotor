@@ -13,7 +13,7 @@
 #define PERIODO_AMOSTRAGEM 300 // Microssegundos
 #define PERIODO_ACAO_DE_CONTROLE 1000 // Microssegundos
 #define INV_MICRO .000001
-#define CONSTANTE_GANHO_CONTROLADOR 0.036899
+#define CONSTANTE_GANHO_CONTROLADOR 0.05
 
 double INV_PERIODO_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
 double INV_RESOLUCAO_ENCODER = 1.0/RESOLUCAO_ENCODER;
@@ -136,7 +136,8 @@ void realizaAcaoDeControle(void) {
     // saida_controlador = 0.567* CONSTANTE_GANHO_CONTROLADOR * PERIODO_AMOSTRAGEM * erro_atual + 0.433 * CONSTANTE_GANHO_CONTROLADOR * PERIODO_AMOSTRAGEM * erro_anterior - saida_controle_anterior;
     // saida_controle_anterior = saida_controlador;
     // saida_controlador = CONSTANTE_GANHO_CONTROLADOR * ((1 + 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_atual + (1 - 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_anterior) - saida_controle_anterior;
-    saida_controlador = 0.273 * saida_controle_anterior + 11.4 * erro_atual - 9.14 * erro_anterior;
+    // saida_controlador = 0.273 * saida_controle_anterior + 11.4 * erro_atual - 9.14 * erro_anterior;
+    // saida_controlador = CONSTANTE_GANHO_CONTROLADOR*(saida_controle_anterior + COEF_EQ_DIFERENCAS_POSICAO*erro_atual + COEF_EQ_DIFERENCAS_POSICAO*erro_anterior);
     saida_controle_anterior = saida_controlador;
     erro_anterior = erro_atual;
     controlaMotor(erro_atual > 0 ? ESQUERDA : DIREITA, saida_controlador * 255);

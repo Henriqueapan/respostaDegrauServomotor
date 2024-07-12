@@ -2,18 +2,18 @@
 
 #include <TimerOne.h>
 
-#define chA 2 // Pino canal A do encoder
-#define chB 3 // Pino canal B do encoder
+#define chA 3 // Pino canal A do encoder
+#define chB 2 // Pino canal B do encoder
 #define REFERENCIA_PIN A0
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 #define JANELA_MEDIA_MOVEL 1
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
-#define PERIODO_AMOSTRAGEM 300 // Microssegundos
+#define PERIODO_AMOSTRAGEM 500 // Microssegundos
 #define PERIODO_ACAO_DE_CONTROLE 500 // Microssegundos
 #define INV_MICRO .000001
-#define CONSTANTE_GANHO_CONTROLADOR .7
+#define CONSTANTE_GANHO_CONTROLADOR 0.018246
 
 double INV_PERIODO_AMOSTRAGEM = 1.0/PERIODO_AMOSTRAGEM;
 double INV_RESOLUCAO_ENCODER = 1.0/RESOLUCAO_ENCODER;
@@ -42,6 +42,9 @@ volatile double posicao_atual = 0;
 volatile double posicao_anterior = 0;
 volatile double posicao_ante_anterior = 0;
 
+const double a0 = 0.13752 * PERIODO_AMOSTRAGEM;
+const double a1 = 0.10494 * PERIODO_AMOSTRAGEM;
+
 enum DirecaoRotacaoMotor {
     ESQUERDA,
     DIREITA
@@ -58,7 +61,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, CHANGE);
     attachInterrupt(digitalPinToInterrupt(chB), leituraEncoder, CHANGE);
 
-    Serial.begin(115200);
+    Serial.begin(9600);
 
     Timer1.initialize(PERIODO_ACAO_DE_CONTROLE);
     Timer1.attachInterrupt(realizaAcaoDeControle);
@@ -68,7 +71,8 @@ void setup() {
 }
 
 void loop() {
-    Serial.println(String(erro_atual, 2) + "//" + String(velocidade_atual, 2) + "//" + String(saida_controlador, 2) + "//" + String(delta_tempo_leitura_encoder, 2));
+    Serial.println(String(velocidade_referencia,2) + " // " + String(erro_atual, 2) + "//" + String(velocidade_atual, 2) + "//" + String(saida_controlador, 10) 
+    + "//" + String(delta_tempo_leitura_encoder, 2));
 }
 
 void leituraEncoder(void) {
@@ -129,19 +133,20 @@ void atualizaContagemDePassosMotor(void) {
 }
 
 void realizaAcaoDeControle(void) {
-    erro_atual = velocidade_atual - velocidade_referencia;
     velocidade_referencia = mapFloat(analogRead(REFERENCIA_PIN), 0, 1020, -500, 500);
+    erro_atual = velocidade_referencia - velocidade_atual;
 
     // posicao_referencia = mapFloat(analogRead(REFERENCIA_PIN), 0, 1020, 0, TWO_PI);
     // erro_atual = posicao_atual - posicao_referencia;
-
-    saida_controlador = CONSTANTE_GANHO_CONTROLADOR * ((1 + 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_atual + (1 - 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_anterior) - saida_controlador_anterior;
-    saida_controlador = constrain(saida_controlador, 0, 255);
-
+    // saida_controlador = CONSTANTE_GANHO_CONTROLADOR*(erro_atual*(1+.134*INV_PERIODO_AMOSTRAGEM) + erro_anterior*(1-.134*INV_PERIODO_AMOSTRAGEM)) - saida_controlador_anterior;
+    // saida_controlador = CONSTANTE_GANHO_CONTROLADOR*(saida_controlador_anterior + COEF_EQ_DIFERENCAS_POSICAO*erro_atual + COEF_EQ_DIFERENCAS_POSICAO*erro_anterior);
+    // saida_controlador = CONSTANTE_GANHO_CONTROLADOR * ((1 + 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_atual + (1 - 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_anterior) - saida_controlador_anterior;
+    saida_controlador = (CONSTANTE_GANHO_CONTROLADOR/2) * (erro_atual * PERIODO_AMOSTRAGEM + 0.26 * erro_atual + PERIODO_AMOSTRAGEM * erro_anterior - 0.26 * erro_anterior) + saida_controlador_anterior; 
+    saida_controlador = constrain(saida_controlador, -255, 255);
     saida_controlador_anterior = saida_controlador;
     // saida_controlador = abs(erro_atual * CONSTANTE_GANHO_CONTROLADOR);
 
-    controlaMotor(erro_atual > 0 ? DirecaoRotacaoMotor::ESQUERDA : DirecaoRotacaoMotor::DIREITA, saida_controlador * 255);
+    controlaMotor(erro_atual > 0 ? DirecaoRotacaoMotor::ESQUERDA : DirecaoRotacaoMotor::DIREITA, abs(saida_controlador));
 }
 
 void controlaMotor(enum DirecaoRotacaoMotor direcao, int valor_pwm) {
