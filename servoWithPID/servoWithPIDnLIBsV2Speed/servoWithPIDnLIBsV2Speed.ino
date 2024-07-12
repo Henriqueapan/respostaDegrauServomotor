@@ -68,7 +68,7 @@ void setup() {
 }
 
 void loop() {
-    // Serial.println(String(erro_atual) + "//" + String(velocidade_atual) + "//" + String(saida_controlador,3) + "//" + String(delta_tempo_leitura_encoder));
+    Serial.println(String(erro_atual, 2) + "//" + String(velocidade_atual, 2) + "//" + String(saida_controlador, 2) + "//" + String(delta_tempo_leitura_encoder, 2));
 }
 
 void leituraEncoder(void) {
@@ -136,6 +136,8 @@ void realizaAcaoDeControle(void) {
     // erro_atual = posicao_atual - posicao_referencia;
 
     saida_controlador = CONSTANTE_GANHO_CONTROLADOR * ((1 + 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_atual + (1 - 0.22 * INV_PERIODO_AMOSTRAGEM) * erro_anterior) - saida_controlador_anterior;
+    saida_controlador = constrain(saida_controlador, 0, 255);
+
     saida_controlador_anterior = saida_controlador;
     // saida_controlador = abs(erro_atual * CONSTANTE_GANHO_CONTROLADOR);
 
