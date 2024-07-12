@@ -1,4 +1,6 @@
 #include <TimerOne.h>
+#include <Encoder.h>
+
 #define chA 2 // Pino canal A do encoder
 #define chB 3 // Pino canal B do encoder
 #define REFERENCIA_PIN A0
@@ -36,6 +38,8 @@ volatile int chB_antigo = 0;
 
 volatile int pwm_val = 0;
 
+Encoder myEnc(chA, chB);
+
 void setup() {
   Timer1.initialize(PERIODO_AMOSTRAGEM);
   Timer1.attachInterrupt(interrupcao);
@@ -47,7 +51,8 @@ void setup() {
   pinMode(MOTOR_PIN_2, OUTPUT);
   pinMode(MOTOR_ENABLE, OUTPUT);
   
-  attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, RISING);
+  TCCR1B = TCCR1B & 0b11111000 | 1;
+//   attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, RISING);
   Serial.begin(115200);
 }
 
@@ -58,7 +63,8 @@ void loop() {
 }
 
 void interrupcao(){
-    leituraEncoder();
+    // leituraEncoder();
+    leituraEncoder2();
     calculaVelocidade();
     integrador(velocidade);
     controladorPOS();
@@ -75,6 +81,7 @@ void atualizarMemorias(){
     erro_anterior = erro;
     // erro_ante_anterior = erro_anterior;
     contador_passos_motor = 0;
+    myEnc.write(0);
 }
 
 void atualizarPWM(){
@@ -113,10 +120,10 @@ void atualizarPWM2(){
 void controladorPOS(){
     ref = mapFloat(analogRead(REFERENCIA_PIN), 0, 1020, 0, TWO_PI);
     erro = ref - posicao;
-    saida_controle =  erro * K * 255 ;  
+    // saida_controle =  erro * K * 255 ;  
     // saida_controle = 0.567* K * PERIODO_AMOSTRAGEM * erro + 0.433 * K * PERIODO_AMOSTRAGEM * erro_anterior - saida_controle_anterior;
     // saida_controle = (0.24237 * (1 + 0.134 * INV_AMOSTRAGEM) * posicao + 0.24237 * (1 - 0.134 * INV_AMOSTRAGEM) * posicao_anterior) - saida_controle_anterior;
-    //saida_controle = K * ((1 + 0.22 * INV_AMOSTRAGEM) * erro + (1 - 0.22 * INV_AMOSTRAGEM) * erro_anterior) - saida_controle_anterior;
+    saida_controle = K * ((1 + 0.22 * INV_AMOSTRAGEM) * erro + (1 - 0.22 * INV_AMOSTRAGEM) * erro_anterior) - saida_controle_anterior;
 }
 
 void calculaVelocidade(){
@@ -161,6 +168,10 @@ void leituraEncoder() {
 
     chA_antigo = chA_atual;
     chB_antigo = chB_atual;
+}
+
+void leituraEncoder2() {
+    contador_passos_motor = myEnc.read();
 }
 
 void controlaMotor(bool in1, bool in2, int valor_pwm){
