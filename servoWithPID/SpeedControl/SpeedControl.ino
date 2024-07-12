@@ -64,7 +64,7 @@ void loop() {
 
 void interrupcao(){
     leituraEncoder();
-    integrador(velocidade);
+    registraPosicaoPorIntegrador(velocidade);
     controladorPOS2();
     // controladorPOS();
     // controladorVEL();
@@ -140,8 +140,8 @@ void controlaMotor(enum DirecaoRotacaoMotor direcao, int valor_pwm) {
     analogWrite(MOTOR_ENABLE, valor_pwm);
 }
 
-void integrador(double vel_atual) {
-  posicao = posicao_anterior + COEF_EQ_DIFERENCAS_POSICAO * vel_atual + COEF_EQ_DIFERENCAS_POSICAO * velocidade_anterior;
+void registraPosicaoPorIntegrador(double vel_atual) {
+  posicao = posicao_anterior + COEF_EQ_DIFERENCAS_POSICAO*vel_atual + COEF_EQ_DIFERENCAS_POSICAO*velocidade_anterior;
   if (posicao > TWO_PI){
     posicao = posicao - TWO_PI;
   } 
