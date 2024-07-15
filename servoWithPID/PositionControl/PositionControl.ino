@@ -105,7 +105,7 @@ void interrupcao(){
     // Serial.println(posicao);
     tempo_atual = micros();
     // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
-    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior = 0) atualizaReferencia();
+    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0) atualizaReferencia();
     tempo_anterior = tempo_atual;
 
     controladorPOS();
