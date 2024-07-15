@@ -1,123 +1,91 @@
+#include <Encoder.h>
 #include <PID_v1.h>
-#define MotEnable 5 //Motor Enamble pin Runs on PWM signal
-#define MotFwd  6  // Motor Forward pin
-#define MotRev  7 // Motor Reverse pin
-#define INV_MICRO .000001
+#include <TimerOne.h>
 
-int encoderPin1 = 2; //Encoder Output 'A' must connected with intreput pin of arduino.
-int encoderPin2 = 3; //Encoder Otput 'B' must connected with intreput pin of arduino.
+// Definição dos pinos
+const int encoderPinA = 2;
+const int encoderPinB = 3;
+const int motorEnablePin = 5; // Pino PWM para controle de velocidade
+const int motorIn1Pin = 7;   // Pino para controle de direção do motor
+const int motorIn2Pin = 6;   // Pino para controle de direção do motor
+const int potPin = A0;
+int speed;
+// Inicialização do encoder
+Encoder myEncoder(encoderPinA, encoderPinB);
 
-volatile int lastEncoded = 0; // Here updated value of encoder store.
-volatile long encoderValue = 0; // Raw encoder value
-int PPR = 200;  // Encoder Pulse per revolution.
-int angle = 360; // Maximum degree of motion.
-volatile float REV = 0;          // Set point REQUIRED ENCODER VALUE
-int lastMSB = 0;
-int lastLSB = 0;
+// Variáveis do sistema
+volatile double position = 0;
+volatile double previousPosition = 0;
+volatile double velocity = 0;
+volatile double previousVelocity = 0;
+double reference = 0;
+double input, output;
 
-volatile double posicao = 0;
-volatile double posicao_anterior = 0;
-volatile double velocidade = 0;
-volatile double velocidade_anterior = 0;
-unsigned long tempo = 0;
-unsigned long tempo_anterior = 0;
+// Parâmetros do controlador PID
+double Kp = 0.020595, Ki = 0.020837, Kd = 0.0029681;
+PID myPID(&position, &output, &reference, Kp, Ki, Kd, 1);
 
-double kp = 0.024767 , ki = 0.0283 , kd = 0.0042819;             // modify for optimal performance
+// Constantes para integração
+const double COEF_EQ_DIFERENCAS_POSICAO = 0.01; // PERIODO_AMOSTRAGEM/2
 
-double input = 0, output = 0, setpoint = 0;
-PID myPID(&input, &output, &setpoint, kp, ki, kd, DIRECT);  
+// Função de integração
+void integrador(double vel_atual) {
+  position = previousPosition + COEF_EQ_DIFERENCAS_POSICAO * vel_atual + COEF_EQ_DIFERENCAS_POSICAO * previousVelocity;
+  if (position > TWO_PI) {
+    position -= TWO_PI;
+  }
+  previousPosition = position;
+  previousVelocity = vel_atual;
+}
+
+// Interrupção a cada 10 ms
+void timerIsr() {
+  long newEncoderPos = myEncoder.read();
+  // Calcula a velocidade (diferencial da posição)
+  velocity = newEncoderPos / 0.001; // rad/s
+
+  // Integra a velocidade para obter a posição
+  integrador(velocity);
+  
+  // Leitura do potenciômetro e mapeamento para referência de 0 a 2pi
+  reference = map(analogRead(potPin), 0, 1023, 0, 2 * PI);
+  
+  // Computa o PID
+  myPID.Compute();
+  
+  // Controle do motor usando a saída do PID
+  if (output > 0) {
+    digitalWrite(motorIn1Pin, HIGH);
+    digitalWrite(motorIn2Pin, LOW);
+  } else {
+    digitalWrite(motorIn1Pin, LOW);
+    digitalWrite(motorIn2Pin, HIGH);
+  }
+  
+  // Ajusta a velocidade do motor
+  // speed = map(abs(output), 0, 1, 50, 255);
+  speed = constrain(output*255,0,254);
+  analogWrite(motorEnablePin, speed);
+  myEncoder.write(0);
+}
 
 void setup() {
-  pinMode(MotEnable, OUTPUT);
-  pinMode(MotFwd, OUTPUT); 
-  pinMode(MotRev, OUTPUT); 
-  Serial.begin(9600); //initialize serial comunication
-  pinMode(encoderPin1, INPUT_PULLUP); 
-  pinMode(encoderPin2, INPUT_PULLUP);
-  digitalWrite(encoderPin1, HIGH); //turn pullup resistor on
-  digitalWrite(encoderPin2, HIGH); //turn pullup resistor on
-  //call updateEncoder() when any high/low changed seen
-  //on interrupt 0 (pin 2), or interrupt 1 (pin 3) 
-  attachInterrupt(0, updateEncoder, CHANGE); 
-  attachInterrupt(1, updateEncoder, CHANGE);
-    
-  TCCR1B = TCCR1B & 0b11111000 | 1;  // set 31KHz PWM to prevent motor noise
-  myPID.SetMode(AUTOMATIC);   //set PID in Auto mode
-  myPID.SetSampleTime(1);  // refresh rate of PID controller
-  myPID.SetOutputLimits(-254, 255); // this is the MAX PWM value to move motor, here change in value reflect change in speed of motor.
+  // Inicialização dos pinos do motor
+  pinMode(motorEnablePin, OUTPUT);
+  pinMode(motorIn1Pin, OUTPUT);
+  pinMode(motorIn2Pin, OUTPUT);
+  
+  // Inicialização do PID
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetSampleTime(1); // 10 ms
+  
+  // Inicialização do Timer1 para interrupção
+  Timer1.initialize(1000); // 10 ms
+  Timer1.attachInterrupt(timerIsr);
+  Serial.begin(115200);
 }
 
 void loop() {
-    tempo_anterior = micros();
-    REV = mapFloat(analogRead(A0), 0, 1020, 0, TWO_PI); // mapping degree into pulse
-
-    Serial.print("this is REV - "); 
-    Serial.println(REV);               // printing REV value  
-    
-    setpoint = REV;                    //PID while work to achive this value consider as SET value
-    
-    calculaVelocidade();
-    integrador(velocidade);
-    input = REV - posicao;           // data from encoder consider as a Process value
-    
-    Serial.print("encoderValue - ");
-    Serial.println(encoderValue);
-    myPID.Compute();                 // calculate new output
-    encoderValue = 0;
-    pwmOut((int)output * 255);
-    Serial.print("output - ");
-    Serial.println(output);
-    tempo = micros() - tempo_anterior;  
-}
-
-void pwmOut(int out) {                               
-  if (out > 0) {                         // if REV > encoderValue motor move in forward direction.    
-    analogWrite(MotEnable, out);         // Enabling motor enable pin to reach the desire angle
-    forward();                           // calling motor to move forward
-  }
-  else {
-    analogWrite(MotEnable, abs(out));          // if REV < encoderValue motor move in forward direction.                      
-    reverse();                            // calling motor to move reverse
-  }
-}
-
-void updateEncoder(){
-  int MSB = digitalRead(encoderPin1); //MSB = most significant bit
-  int LSB = digitalRead(encoderPin2); //LSB = least significant bit
-  int encoded = (MSB << 1) |LSB; //converting the 2 pin value to single number
-  int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
-  if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoderValue ++;
-  if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderValue --;
-  lastEncoded = encoded; //store this value for next time
-}
-
-void forward () {
-  digitalWrite(MotFwd, HIGH); 
-  digitalWrite(MotRev, LOW); 
-}
-
-void reverse () {
-  digitalWrite(MotFwd, LOW); 
-  digitalWrite(MotRev, HIGH);  
-}
-
-void finish () {
-  digitalWrite(MotFwd, LOW); 
-  digitalWrite(MotRev, LOW); 
-}
-
-void integrador(double vel_atual) {
-  posicao = posicao_anterior + ((tempo/2) * INV_MICRO) * vel_atual + ((tempo/2) * INV_MICRO) * velocidade_anterior;
-  if (posicao > TWO_PI){
-    posicao = posicao - TWO_PI;
-  } 
-}
-
-void calculaVelocidade(){
-    if(tempo == 0) return;
-    velocidade = encoderValue * (1/200) * TWO_PI/tempo;
-}
-
-float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  // Nada para fazer no loop principal
+  Serial.println(speed);
 }
