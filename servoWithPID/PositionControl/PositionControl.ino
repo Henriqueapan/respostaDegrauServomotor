@@ -9,6 +9,7 @@
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
 #define PERIODO_AMOSTRAGEM 10000 // Microssegundos
+#define PERIODO_LEITURA_REFERENCIA 500000 // Microssegundos
 #define INV_MICRO .000001
 
 #define PWM_MIN 40 // Valor mínimo de PWM para acionar o motor
@@ -26,6 +27,9 @@ PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 volatile double buffer[WINDOW_SIZE] = {0};
 volatile int bufferIndex = 0;
 volatile double somaMedia = 0;
+
+volatile unsigned long tempo_atual = 0;
+volatile unsigned long tempo_anterior = 0;
 
 volatile double velocidade = 0;
 double PERIODO_AMOSTRAGEM_SEC = PERIODO_AMOSTRAGEM * INV_MICRO;
@@ -99,6 +103,11 @@ void interrupcao(){
     // integrador(mediaMovelVelocidade(velocidade));
     integrador(velocidade);
     // Serial.println(posicao);
+    tempo_atual = micros();
+    // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
+    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior = 0) atualizaReferencia();
+    tempo_anterior = tempo_atual;
+
     controladorPOS();
     // controladorPID();
     // saida_controle = gzoh(saida_controle);
@@ -159,8 +168,13 @@ void atualizarPWM3(){
     }
 }
 
+void atualizaReferencia() {
+    ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
+}
+
 void controladorPID(){
-    Setpoint = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
+    // Setpoint = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
+    Setpoint = ref;
     Input = posicao;
     myPID.Compute();
     saida_controle = Output;
@@ -168,7 +182,7 @@ void controladorPID(){
 
 
 void controladorPOS(){
-    ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
+    // ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
     erro = ref - posicao;
     // saida_controle =  erro * K;  
     // saida_controle = (0.24237 * (1 + 0.134 * INV_AMOSTRAGEM_SEC) * posicao + 0.24237 * (1 - 0.134 * INV_AMOSTRAGEM_SEC) * posicao_anterior) - saida_controle_anterior;
