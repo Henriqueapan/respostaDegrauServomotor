@@ -1,8 +1,8 @@
 #include <TimerOne.h>
 #include <PID_v1.h>
 
-#define chA 2 // Pino canal A do encoder
-#define chB 3 // Pino canal B do encoder
+#define chA 3 // Pino canal A do encoder
+#define chB 2 // Pino canal B do encoder
 #define REFERENCIA_PIN A0
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
@@ -64,7 +64,7 @@ volatile int chB_antigo = 0;
 volatile int pwm_val = 0;
 
 // double K = 0.839625176;
-double K = 0.5;
+double K = 0.9;
 
 void setup() {
     Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -105,8 +105,11 @@ void interrupcao(){
     // Serial.println(posicao);
     tempo_atual = micros();
     // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
-    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0) atualizaReferencia();
-    tempo_anterior = tempo_atual;
+    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
+        atualizaReferencia();
+        tempo_anterior = tempo_atual;
+    } 
+    
 
     controladorPOS();
     // controladorPID();
@@ -116,7 +119,7 @@ void interrupcao(){
     atualizarPWM();
     // atualizarPWM2();
     // atualizarPWM3(); 
-    Serial.println(saida_controle,20);
+    Serial.println(saida_controle);
     // Serial.println(pwm_val);
     // controlaMotor(1,0,55);
 }
@@ -190,9 +193,9 @@ void controladorPOS(){
     // saida_controle = (K * (erro*(2 + 14.95 *PERIODO_AMOSTRAGEM_SEC) + erro_anterior * (14.95 * PERIODO_AMOSTRAGEM_SEC - 2)) - saida_controle_anterior * (147.1663896 * PERIODO_AMOSTRAGEM_SEC - 2)) * coef_control;
     
     // saida_controle = (0.8396 * erro - 0.7201 * erro_anterior) + 0.9063 * saida_controle_anterior;
-    saida_controle = K * (erro - 0.8576 * erro_anterior) + 0.9063 * saida_controle_anterior;
+    // saida_controle = K * (erro - 0.8576 * erro_anterior) + 0.9063 * saida_controle_anterior;
     // saida_controle = K * (0.0084592 * erro_anterior - 0.007285908996 * erro_ante_anterior) + 0.236 * saida_controle_ante_anterior - 0.60749289 * saida_controle_ante_anterior;
-    
+    saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior;
     saida_controle_ante_anterior = saida_controle_anterior;
     erro_ante_anterior = erro_anterior;
     saida_controle_anterior = saida_controle;
