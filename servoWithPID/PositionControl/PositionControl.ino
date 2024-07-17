@@ -9,10 +9,10 @@
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
 #define PERIODO_AMOSTRAGEM 10000 // Microssegundos
-#define PERIODO_LEITURA_REFERENCIA 500000 // Microssegundos
+#define PERIODO_LEITURA_REFERENCIA 1000000 // Microssegundos
 #define INV_MICRO .000001
 
-#define PWM_MIN 40 // Valor mínimo de PWM para acionar o motor
+#define PWM_MIN 85 // Valor mínimo de PWM para acionar o motor
 #define DEAD_ZONE 10 
 
 #define WINDOW_SIZE 25 // Tamanho da janela para a média móvel
@@ -64,7 +64,7 @@ volatile int chB_antigo = 0;
 volatile int pwm_val = 0;
 
 // double K = 0.839625176;
-double K = 0.9;
+double K = 0.5;
 
 void setup() {
     Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -95,6 +95,7 @@ void loop() {
 }
 
 void interrupcao(){
+    
     // refAleatoria();
     // Serial.println(contador_passos_motor);
     calculaVelocidade();
@@ -103,25 +104,24 @@ void interrupcao(){
     // integrador(mediaMovelVelocidade(velocidade));
     integrador(velocidade);
     // Serial.println(posicao);
-    tempo_atual = micros();
     // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
+    tempo_atual = micros();
     if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
         atualizaReferencia();
         tempo_anterior = tempo_atual;
     } 
     
-
     controladorPOS();
     // controladorPID();
     // saida_controle = gzoh(saida_controle);
-    // Serial.println(erro);
+    Serial.println(erro*RAD_TO_DEG);
 
-    atualizarPWM();
-    // atualizarPWM2();
+    // atualizarPWM();
+    atualizarPWM2();
     // atualizarPWM3(); 
-    Serial.println(saida_controle);
+    // Serial.println(saida_controle);
     // Serial.println(pwm_val);
-    // controlaMotor(1,0,55);
+    // controlaMotor(1,0,255);
 }
 
 void atualizarPWM(){
@@ -130,22 +130,22 @@ void atualizarPWM(){
         controlaMotor(1, 0, abs(pwm_val));
     }
     else{
-        controlaMotor(0, 1, abs(pwm_val)*255);
+        controlaMotor(0, 1, abs(pwm_val));
     }
 }
 
 void atualizarPWM2(){
     pwm_val = saida_controle*255;
 
-    if (pwm_val < DEAD_ZONE) {
+    if (abs(pwm_val) < DEAD_ZONE) {
         // Se o valor do PWM estiver dentro da zona morta, desligue o motor
-        digitalWrite(MOTOR_PIN_1, HIGH);
-        digitalWrite(MOTOR_PIN_2, HIGH);
+        digitalWrite(MOTOR_PIN_1, 1);
+        digitalWrite(MOTOR_PIN_2, 1);
         analogWrite(MOTOR_ENABLE, 255);
     } else {
         // Garanta que o valor do PWM seja pelo menos PWM_MIN
-        if (pwm_val < PWM_MIN) {
-            pwm_val = PWM_MIN;
+        if (abs(pwm_val) < PWM_MIN) {
+            pwm_val = pwm_val < 0 ? - PWM_MIN : PWM_MIN;
         }
         pwm_val = constrain(pwm_val,-254,254);
         if (erro < 0){
@@ -159,12 +159,12 @@ void atualizarPWM2(){
 
 void atualizarPWM3(){
     if (erro >= 1){
-        pwm_val = map(255*saida_controle, -254, 254, 40, 254);
-        controlaMotor(1, 0, abs(pwm_val));
+        pwm_val = constrain(map(255*saida_controle, -1, 1, 40, 254),-254,254);
+        controlaMotor(0, 1, abs(pwm_val));
     }
     else if(erro <= -1){
-        pwm_val = map(255*saida_controle, -254, 254, 40, 254);
-        controlaMotor(0, 1, abs(pwm_val));
+        pwm_val = constrain(map(255*saida_controle, -1, 1, 40, 254),-254,254);
+        controlaMotor(1, 0, abs(pwm_val));
     }
     else{
        controlaMotor(1, 1, 254); 
@@ -195,7 +195,8 @@ void controladorPOS(){
     // saida_controle = (0.8396 * erro - 0.7201 * erro_anterior) + 0.9063 * saida_controle_anterior;
     // saida_controle = K * (erro - 0.8576 * erro_anterior) + 0.9063 * saida_controle_anterior;
     // saida_controle = K * (0.0084592 * erro_anterior - 0.007285908996 * erro_ante_anterior) + 0.236 * saida_controle_ante_anterior - 0.60749289 * saida_controle_ante_anterior;
-    saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior;
+    saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
+    // saida_controle = K*(erro - 0.597569*erro_anterior + 0.0010539702*erro_ante_anterior) + 1.7338*saida_controle - 0.75151561*saida_controle_ante_anterior; //ATRASO   
     saida_controle_ante_anterior = saida_controle_anterior;
     erro_ante_anterior = erro_anterior;
     saida_controle_anterior = saida_controle;
