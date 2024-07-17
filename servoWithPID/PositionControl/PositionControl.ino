@@ -122,7 +122,7 @@ void interrupcao(){
     // Serial.println(saida_controle);
     // Serial.println(pwm_val);
     // controlaMotor(1,0,255);
-    Serial.println(String(erro,5) + ", " + String(tempo_atual,5) + ", " + String(posicao,5) + ", " + String(ref,5));
+    Serial.println(String(erro, 5) + "," + String(tempo_atual, 5) + "," + String(posicao, 5) + "," + String(ref, 5));
 }
 
 void atualizarPWM(){
