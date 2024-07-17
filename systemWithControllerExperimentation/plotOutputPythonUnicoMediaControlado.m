@@ -2,7 +2,7 @@ clear all
 close all
 pkg load signal
 
-[erro, tempo, posicao, referencia] = textread('./output/outputDegrau/output2024-05-25_12-55-46.txt', "%f, %f, %f, %f");
+[erro, tempo, posicao, referencia] = textread('./output/outputDegrau/output2024-05-25_12-55-46.txt', "%f,%f,%f,%f");
 
 janela_mediana = 10; % Tamanho da janela para o filtro de mediana
 janela_media = 10; % Tamanho da janela para o filtro de média
