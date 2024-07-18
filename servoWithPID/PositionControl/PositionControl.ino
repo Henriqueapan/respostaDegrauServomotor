@@ -64,7 +64,7 @@ volatile int chB_antigo = 0;
 volatile int pwm_val = 0;
 
 // double K = 0.839625176;
-double K = 0.5;
+double K = 0.01;
 
 void setup() {
     Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -122,7 +122,7 @@ void interrupcao(){
     // Serial.println(saida_controle);
     // Serial.println(pwm_val);
     // controlaMotor(1,0,255);
-    Serial.println(String(erro,5) + ", " + String(tempo_atual,5) + ", " + String(posicao,5) + ", " + String(ref,5));
+    Serial.println(String(erro*RAD_TO_DEG,5) + ", " + String(tempo_atual*INV_MICRO,5) + ", " + String(posicao,5) + ", " + String(ref,5));
 }
 
 void atualizarPWM(){
@@ -136,7 +136,7 @@ void atualizarPWM(){
 }
 
 void atualizarPWM2(){
-    pwm_val = saida_controle*255;
+    pwm_val = saida_controle*10.8*255;
 
     if (abs(pwm_val) < DEAD_ZONE) {
         // Se o valor do PWM estiver dentro da zona morta, desligue o motor
@@ -173,7 +173,7 @@ void atualizarPWM3(){
 }
 
 void atualizaReferencia() {
-    ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
+    ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * (5.75);
 }
 
 void controladorPID(){
@@ -188,7 +188,7 @@ void controladorPID(){
 void controladorPOS(){
     // ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
     erro = ref - posicao;
-    // saida_controle =  erro * K;  
+    saida_controle =  erro * K;  
     // saida_controle = (0.24237 * (1 + 0.134 * INV_AMOSTRAGEM_SEC) * posicao + 0.24237 * (1 - 0.134 * INV_AMOSTRAGEM_SEC) * posicao_anterior) - saida_controle_anterior;
     // saida_controle = K * ((1 + 0.22 * INV_AMOSTRAGEM_SEC) * erro + (1 - 0.22 * INV_AMOSTRAGEM_SEC) * erro_anterior) - saida_controle_anterior;
     // saida_controle = (K * (erro*(2 + 14.95 *PERIODO_AMOSTRAGEM_SEC) + erro_anterior * (14.95 * PERIODO_AMOSTRAGEM_SEC - 2)) - saida_controle_anterior * (147.1663896 * PERIODO_AMOSTRAGEM_SEC - 2)) * coef_control;
@@ -196,7 +196,11 @@ void controladorPOS(){
     // saida_controle = (0.8396 * erro - 0.7201 * erro_anterior) + 0.9063 * saida_controle_anterior;
     // saida_controle = K * (erro - 0.8576 * erro_anterior) + 0.9063 * saida_controle_anterior;
     // saida_controle = K * (0.0084592 * erro_anterior - 0.007285908996 * erro_ante_anterior) + 0.236 * saida_controle_ante_anterior - 0.60749289 * saida_controle_ante_anterior;
-    saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
+    
+    
+    // saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
+    
+    
     // saida_controle = K*(erro - 0.597569*erro_anterior + 0.0010539702*erro_ante_anterior) + 1.7338*saida_controle - 0.75151561*saida_controle_ante_anterior; //ATRASO   
     saida_controle_ante_anterior = saida_controle_anterior;
     erro_ante_anterior = erro_anterior;
@@ -217,10 +221,10 @@ void calculaPOS(){
 void integrador(double vel_atual) {
 //   posicao = posicao_anterior + COEF_EQ_DIFERENCAS_POSICAO * vel_atual + COEF_EQ_DIFERENCAS_POSICAO * velocidade_anterior;
   posicao = posicao_anterior + 0.0005 * vel_atual + 0.0005 * velocidade_anterior;
-  if (posicao > TWO_PI){
+  if (posicao >= TWO_PI){
     posicao = posicao - TWO_PI;
   }
-  else if(posicao < -TWO_PI){
+  else if(posicao <= -TWO_PI){
     posicao = posicao + TWO_PI;
   } 
     velocidade_anterior = velocidade;
