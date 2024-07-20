@@ -13,7 +13,7 @@
 #define INV_MICRO .000001
 
 #define PWM_MIN 85 // Valor mínimo de PWM para acionar o motor
-#define DEAD_ZONE 10 
+#define DEAD_ZONE 13 
 
 #define WINDOW_SIZE 25 // Tamanho da janela para a média móvel
 
@@ -64,7 +64,8 @@ volatile int chB_antigo = 0;
 volatile int pwm_val = 0;
 
 // double K = 0.839625176;
-double K = 0.01;
+// double K = 0.01;
+double K = 1.35;
 
 void setup() {
     Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -122,11 +123,11 @@ void interrupcao(){
     // Serial.println(saida_controle);
     // Serial.println(pwm_val);
     // controlaMotor(1,0,255);
-    Serial.println(String(erro, 5) + "," + String(tempo_atual, 5) + "," + String(posicao, 5) + "," + String(ref, 5));
+    Serial.println(String(erro*RAD_TO_DEG, 5) + "," + String(tempo_atual, 5) + "," + String(posicao, 5) + "," + String(ref, 5));
 }
 
 void atualizarPWM(){
-    pwm_val = constrain(saida_controle*255,-254,254);
+    pwm_val = constrain(saida_controle,-254,254);
     if (saida_controle <= 0){
         controlaMotor(1, 0, abs(pwm_val));
     }
@@ -136,7 +137,7 @@ void atualizarPWM(){
 }
 
 void atualizarPWM2(){
-    pwm_val = saida_controle*10.8*255;
+    pwm_val = saida_controle*255;
 
     if (abs(pwm_val) < DEAD_ZONE) {
         // Se o valor do PWM estiver dentro da zona morta, desligue o motor
@@ -198,7 +199,7 @@ void controladorPOS(){
     // saida_controle = K * (0.0084592 * erro_anterior - 0.007285908996 * erro_ante_anterior) + 0.236 * saida_controle_ante_anterior - 0.60749289 * saida_controle_ante_anterior;
     
     
-    // saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
+    saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
     
     
     // saida_controle = K*(erro - 0.597569*erro_anterior + 0.0010539702*erro_ante_anterior) + 1.7338*saida_controle - 0.75151561*saida_controle_ante_anterior; //ATRASO   
