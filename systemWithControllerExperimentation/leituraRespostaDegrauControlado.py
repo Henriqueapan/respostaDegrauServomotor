@@ -26,6 +26,9 @@ soma_buffer_erro = sum(buffer_erro)
 buffer_pos = [0] * M
 soma_buffer_pos = sum(buffer_pos)
 
+buffer_ref = [0] * M
+soma_buffer_ref = sum(buffer_ref)
+
 # Tempo de execução em segundos
 tempo_execucao = 24
 
@@ -54,12 +57,15 @@ while True:
 
     buffer_erro[i%M] = erro_atual
     buffer_pos[i%M] = posicao_atual
+    buffer_ref[i%M] = referencia_posicao_atual
 
     soma_buffer_erro = sum(buffer_erro)
     soma_buffer_pos = sum(buffer_pos)
+    soma_buffer_ref = sum(buffer_ref)
 
     erro.append(soma_buffer_erro * inv_M)
     posicao.append(soma_buffer_pos * inv_M)
+    referencia_posicao.append(soma_buffer_ref * inv_M)
 
     if(tempo[i] > tempo_execucao): break
     print(format(tempo[i],'.2f'))
