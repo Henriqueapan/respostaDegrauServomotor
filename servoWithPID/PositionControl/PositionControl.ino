@@ -12,7 +12,7 @@
 #define PERIODO_LEITURA_REFERENCIA 1000000 // Microssegundos
 #define INV_MICRO .000001
 
-#define PWM_MIN 85 // Valor mínimo de PWM para acionar o motor
+#define PWM_MIN 70 // Valor mínimo de PWM para acionar o motor
 #define DEAD_ZONE 13 
 
 #define WINDOW_SIZE 25 // Tamanho da janela para a média móvel
@@ -42,8 +42,6 @@ volatile double erro = 0;
 volatile double ref = 0;
 volatile double saida_controle = 0;
 
-double COEF_EQ_DIFERENCAS_POSICAO = (PERIODO_AMOSTRAGEM/2) * INV_MICRO;
-double coef_control = (2+147.1663896*PERIODO_AMOSTRAGEM*INV_MICRO);
 volatile double velocidade_anterior = 0;
 volatile double erro_anterior = 0;
 volatile double erro_ante_anterior = 0;
@@ -63,9 +61,8 @@ volatile int chB_antigo = 0;
 
 volatile int pwm_val = 0;
 
-// double K = 0.839625176;
-// double K = 0.01;
-double K = 1.35;
+double K = 0.02;
+// double K = 1.35;
 
 void setup() {
     Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -88,11 +85,9 @@ void setup() {
 }
 
 void loop() {
-    // Serial.println(contador_passos_motor);
-    // Serial.println(String(erro) + " / " + String(erro_anterior) + " / / " + String(saida_controle) + " / " + String(saida_controle_anterior));
-    // Serial.println("ref: " + String(ref) + " / " + "erro: " +  String(erro) + " / " + "saida: " + String(saida_controle,7) + " PWM: " + String(pwm_val));
-    // Serial.println(String(ref) + " / " + String(erro) + " / " + String(velocidade) + " / " + String(saida_controle)+ "/ " + String(pwm_val)); 
-    // Serial.println(String(contador_passos_motor)  + " / " + String(saida_controle));
+    Serial.println(String(0) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
+    // Serial.println(String(0) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref, 5));
+
 }
 
 void interrupcao(){
@@ -107,10 +102,14 @@ void interrupcao(){
     // Serial.println(posicao);
     // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
     tempo_atual = micros();
-    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
-        atualizaReferencia();
-        tempo_anterior = tempo_atual;
-    } 
+
+    // if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
+    //     atualizaReferencia();
+    //     tempo_anterior = tempo_atual;
+    // }
+
+    // refsExperimentais();
+    refsExperimentais2();
     
     controladorPOS();
     // controladorPID();
@@ -123,16 +122,16 @@ void interrupcao(){
     // Serial.println(saida_controle);
     // Serial.println(pwm_val);
     // controlaMotor(1,0,255);
-    Serial.println(String(erro*RAD_TO_DEG, 5) + "," + String(tempo_atual, 5) + "," + String(posicao, 5) + "," + String(ref, 5));
+    // Serial.println(String(erro*RAD_TO_DEG, 5) + "," + String(tempo_atual, 5) + "," + String(posicao, 5) + "," + String(ref, 5));
 }
 
 void atualizarPWM(){
-    pwm_val = constrain(saida_controle,-254,254);
+    pwm_val = constrain(saida_controle*255,-254,254);
     if (saida_controle <= 0){
-        controlaMotor(1, 0, abs(pwm_val));
+        controlaMotor(0, 1, abs(pwm_val));
     }
     else{
-        controlaMotor(0, 1, abs(pwm_val));
+        controlaMotor(1, 0, abs(pwm_val));
     }
 }
 
@@ -189,7 +188,6 @@ void controladorPID(){
 void controladorPOS(){
     // ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
     erro = ref - posicao;
-    saida_controle =  erro * K;  
     // saida_controle = (0.24237 * (1 + 0.134 * INV_AMOSTRAGEM_SEC) * posicao + 0.24237 * (1 - 0.134 * INV_AMOSTRAGEM_SEC) * posicao_anterior) - saida_controle_anterior;
     // saida_controle = K * ((1 + 0.22 * INV_AMOSTRAGEM_SEC) * erro + (1 - 0.22 * INV_AMOSTRAGEM_SEC) * erro_anterior) - saida_controle_anterior;
     // saida_controle = (K * (erro*(2 + 14.95 *PERIODO_AMOSTRAGEM_SEC) + erro_anterior * (14.95 * PERIODO_AMOSTRAGEM_SEC - 2)) - saida_controle_anterior * (147.1663896 * PERIODO_AMOSTRAGEM_SEC - 2)) * coef_control;
@@ -198,11 +196,11 @@ void controladorPOS(){
     // saida_controle = K * (erro - 0.8576 * erro_anterior) + 0.9063 * saida_controle_anterior;
     // saida_controle = K * (0.0084592 * erro_anterior - 0.007285908996 * erro_ante_anterior) + 0.236 * saida_controle_ante_anterior - 0.60749289 * saida_controle_ante_anterior;
     
+    // CONTROLADOR PROPORCIONAL
+    saida_controle =  erro * K;
+    // CONTROLADOR DE AVANÇO DE FASE DUPLO
+    // saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
     
-    saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
-    
-    
-    // saida_controle = K*(erro - 0.597569*erro_anterior + 0.0010539702*erro_ante_anterior) + 1.7338*saida_controle - 0.75151561*saida_controle_ante_anterior; //ATRASO   
     saida_controle_ante_anterior = saida_controle_anterior;
     erro_ante_anterior = erro_anterior;
     saida_controle_anterior = saida_controle;
@@ -272,10 +270,6 @@ void controlaMotor(bool in1, bool in2, int valor_pwm){
     analogWrite(MOTOR_ENABLE, valor_pwm);
 }
 
-float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
 // Função para calcular a média móvel da velocidade
 double mediaMovel(double variavel) {
     // Subtrai o valor mais antigo da soma
@@ -294,15 +288,69 @@ double mediaMovel(double variavel) {
     return somaMedia / WINDOW_SIZE;
 }
 
-// void refAleatoria(){
-//     if(cont_periodos >= 1000){
-//         ref = random();
-//     }
-// }
+void refsExperimentais(){
+    if (tempo_atual<(5*1000000)){
+        ref = 0; // DELAY ANTES DE COMEÇAR O EXPERIMENTO
+    }
+    else if(tempo_atual<(7*1000000)){
+        ref = 30*DEG_TO_RAD; // REFERENCIA EM 30º NOS 2s DE EXPERIMENTO
+    } 
+    else if(tempo_atual<(9*1000000)){
+        ref = 70*DEG_TO_RAD; // REFERENCIA EM 70º NOS 4s DE EXPERIMENTO
+    } 
+    else if(tempo_atual<(11*1000000)){
+        ref = 165*DEG_TO_RAD; // REFERENCIA EM 165º NOS 6s DE EXPERIMENTO
+    }
+    else if(tempo_atual<(13*1000000)){
+        ref = 100*DEG_TO_RAD; // REFERENCIA EM 165º NOS 8s DE EXPERIMENTO
+    } 
+    else if(tempo_atual<(15*1000000)){
+        ref = 310*DEG_TO_RAD; // REFERENCIA EM 300º NOS 10s DE EXPERIMENTO
+    }
+    else if(tempo_atual<(17*1000000)){
+        ref = 230*DEG_TO_RAD; // REFERENCIA EM 230º NOS 12s DE EXPERIMENTO
+    }
+    else if(tempo_atual<(19*1000000)){
+        ref = 45*DEG_TO_RAD; // REFERENCIA EM 45º NOS 14s DE EXPERIMENTO
+    }
+    else if(tempo_atual<(21*1000000)){
+        ref = 150*DEG_TO_RAD; // REFERENCIA EM 150º NOS 16s DE EXPERIMENTO
+    }
+    else if(tempo_atual<(23*1000000)){
+        ref = 270*DEG_TO_RAD; // REFERENCIA EM 270º NOS 18s DE EXPERIMENTO
+    }
+    else if(tempo_atual<(25*1000000)){
+        ref = 20*DEG_TO_RAD; // REFERENCIA EM 20º NOS 20s DE EXPERIMENTO
+    }
+    else{
+        // Serial.end();
+    }  
+}
 
-double gzoh(double in){
-    double out;
-    out = 0.5*in - 0.5*in_anterior;
-    in_anterior = in;
-    return out; 
+void refsExperimentais2(){
+    if (tempo_atual < (5 * 1000000)) {
+        ref = 0.0000000000;  // DELAY ANTES DE COMEÇAR O EXPERIMENTO
+    } else if (tempo_atual < (7 * 1000000)) {
+        ref = 0.5235987755982989;  // REFERENCIA EM 30º NOS 2s DE EXPERIMENTO
+    } else if (tempo_atual < (9 * 1000000)) {
+        ref = 1.221730476396030;  // REFERENCIA EM 70º NOS 4s DE EXPERIMENTO
+    } else if (tempo_atual < (11 * 1000000)) {
+        ref = 2.879385241571817;  // REFERENCIA EM 165º NOS 6s DE EXPERIMENTO
+    } else if (tempo_atual < (13 * 1000000)) {
+        ref = 1.745329251994330;  // REFERENCIA EM 100º NOS 8s DE EXPERIMENTO
+    } else if (tempo_atual < (15 * 1000000)) {
+        ref = 5.410520681182422;  // REFERENCIA EM 310º NOS 10s DE EXPERIMENTO
+    } else if (tempo_atual < (17 * 1000000)) {
+        ref = 4.014257279127542;  // REFERENCIA EM 230º NOS 12s DE EXPERIMENTO
+    } else if (tempo_atual < (19 * 1000000)) {
+        ref = 0.785398163397448;  // REFERENCIA EM 45º NOS 14s DE EXPERIMENTO
+    } else if (tempo_atual < (21 * 1000000)) {
+        ref = 2.617993877991494;  // REFERENCIA EM 150º NOS 16s DE EXPERIMENTO
+    } else if (tempo_atual < (23 * 1000000)) {
+        ref = 4.712388980384690;  // REFERENCIA EM 270º NOS 18s DE EXPERIMENTO
+    } else if (tempo_atual < (25 * 1000000)) {
+        ref = 0.349065850398866;  // REFERENCIA EM 20º NOS 20s DE EXPERIMENTO
+    } else {
+        // Serial.end();
+    }
 }

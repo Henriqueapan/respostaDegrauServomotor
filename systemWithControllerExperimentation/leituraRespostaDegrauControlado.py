@@ -1,7 +1,7 @@
 import serial, datetime, time
 
 ser = serial.Serial(
-    port="COM7",
+    port="COM5",
     baudrate=115200,
     timeout=0
 )
@@ -27,7 +27,7 @@ buffer_pos = [0] * M
 soma_buffer_pos = sum(buffer_pos)
 
 # Tempo de execução em segundos
-tempo_execucao = 5.4
+tempo_execucao = 24
 
 print("Conectando a porta: " + ser.portstr)
 
@@ -65,7 +65,11 @@ while True:
     print(format(tempo[i],'.2f'))
     i += 1
 
-with open(f'./output/outputDegrau/output{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as file:
+# with open(f'./output/outputDegrau/output{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as file:
+#     file.writelines([f'{str(erro)},{str(tempo)},{str(posicao)},{str(referencia_posicao)}\n' for erro, tempo, posicao, referencia_posicao in zip(erro, tempo, posicao, referencia_posicao)])
+#     file.close()
+
+with open(f'./Experimentos/output{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'w') as file:
     file.writelines([f'{str(erro)},{str(tempo)},{str(posicao)},{str(referencia_posicao)}\n' for erro, tempo, posicao, referencia_posicao in zip(erro, tempo, posicao, referencia_posicao)])
     file.close()
 
