@@ -2,13 +2,13 @@ clear all
 close all
 pkg load signal
 
-[erro, tempo, posicao, referencia] = textread('./Experimentos/output2024-07-20_20-43-47avancoCC.txt', "%f,%f,%f,%f");
+[erro, tempo, posicao, referencia] = textread('./Experimentos/output2024-07-21_02-12-43.txt', "%f,%f,%f,%f");
 
 janela_mediana = 10; % Tamanho da janela para o filtro de mediana
 janela_media = 10; % Tamanho da janela para o filtro de média
 
 tempo_maximo_de_plot = 24;
-idx_tempo_maximo_de_plot = 3720;
+idx_tempo_maximo_de_plot = Inf;
 
 for i=1:1:length(tempo)
     if tempo(i) <= tempo_maximo_de_plot + .0001 && tempo(i) >= tempo_maximo_de_plot - .0001
@@ -23,9 +23,6 @@ if idx_tempo_maximo_de_plot ~= Inf
     posicao = posicao(1:idx_tempo_maximo_de_plot)
 ##    vel = vel(1:idx_tempo_maximo_de_plot)
     tempo = tempo(1:idx_tempo_maximo_de_plot)
-else
-    disp("Impossível determinar o tempo máximo do plot\n")
-    return
 endif
 
 % Aplicar filtro de média
@@ -33,9 +30,10 @@ b = (1/janela_media) * ones(1, janela_media);
 a = 1;
 erro_filt_media = filter(b, a, erro);
 posicao_filt_media = filter(b, a, posicao);
-ref_filt_media = filter(b, a, referencia);
+
+##ref_filt_media = filter(b, a, referencia);
 ##
-ref_arredondada = round(referencia * 100) / 100;
+##ref_arredondada = round(referencia * 100) / 100;
 ##b = (1/100) * ones(1, 100);
 ##a = 1;
 ##ref_arredondada = filter(b, a, ref_arredondada);
@@ -75,18 +73,6 @@ for i = 1:length(tempo)
 end
 ref = ref';
 
-
-% figure(1)
-% plot(tempo, vel_filt_media);
-% xlim([0 .5])
-% ylim([-20 500])
-% xlabel('Tempo (s)');
-% ylabel('Velocidade (rad/s)');
-% h = get(gca, 'Children');
-% set(h(1), 'Color', 'b');
-% set(h(1), 'LineWidth', 2);
-% grid on;
-
 figure(1)
 plot(tempo, rad2deg(posicao_filt_media));
 hold on;
@@ -96,9 +82,9 @@ plot(tempo, ref);
 ##plot(tempo, rad2deg(ref_filt_media));
 hold on;
 
-##plot(tempo, rad2deg(erro_filt_media/1000));
-erro_calculado = abs(ref - rad2deg(posicao_filt_media));
-plot(tempo, erro_calculado);
+plot(tempo, rad2deg(abs(erro_filt_media)));
+##erro_calculado = abs(ref - rad2deg(posicao_filt_media));
+##plot(tempo, erro_calculado);
 
 xlabel('Tempo (s)');
 ylabel('Posição Angular do Eixo (Graus)');
