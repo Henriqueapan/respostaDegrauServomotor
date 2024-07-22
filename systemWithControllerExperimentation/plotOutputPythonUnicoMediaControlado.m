@@ -2,7 +2,7 @@ clear all
 close all
 pkg load signal
 
-[erro, tempo, posicao, referencia] = textread('./Experimentos/output2024-07-21_02-08-52AvancoSCISR.txt', "%f,%f,%f,%f");
+[erro, tempo, posicao, referencia] = textread('./Experimentos/output2024-07-22_11-47-26.txt', "%f,%f,%f,%f");
 
 janela_mediana = 10; % Tamanho da janela para o filtro de mediana
 janela_media = 10; % Tamanho da janela para o filtro de média
