@@ -10,11 +10,11 @@
 #define RESOLUCAO_ENCODER 200 // Resolução do encoder (quantidade de passos que representa 1 volta completa)
 #define PERIODO_AMOSTRAGEM 10000 // Microssegundos
 #define INV_MICRO .000001
-
 #define PERIODO_LEITURA_REFERENCIA 1000000 // Microssegundos
+
 // Definições das limitações do motor
 #define PWM_MIN 70 // Valor mínimo de PWM para acionar o motor
-#define DEAD_ZONE 13 
+#define DEAD_ZONE 13 // Valor de duty cycle abaixo do qual é definida a zona morta
 
 // Variáveis para medição de tempo
 volatile unsigned long tempo_atual = 0;
