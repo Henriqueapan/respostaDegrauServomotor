@@ -11,8 +11,8 @@
 #define PERIODO_AMOSTRAGEM 10000 // Microssegundos
 #define INV_MICRO .000001
 
-#define PERIODO_LEITURA_REFERENCIA 1000000 // Microssegundos
-// #define PERIODO_LEITURA_REFERENCIA 0 // Microssegundos
+// #define PERIODO_LEITURA_REFERENCIA 1000000 // Microssegundos
+#define PERIODO_LEITURA_REFERENCIA 0 // Microssegundos
 
 // Definições das limitações do motor
 #define PWM_MIN 70 // Valor mínimo de PWM para acionar o motor
@@ -55,19 +55,16 @@ volatile int chB_antigo = 0;
 volatile int pwm_val = 0;
 
 // double K = 0.02; //PROPORCIONAL
-// double K = 1.35; //AVANCO DE FASE
-// double K = 1.6973; //AVANCO DE FASE
-
+double K = 1.35; //AVANCO DE FASE
 
 // Defina Variáveis
 double Setpoint, Input, Output;
 // Parâmetros PID
-// double Kp = 0.02, Ki = 0, Kd = 0; // P
-double Kp = 0.0439, Ki = 0, Kd = 0.0024; // PD
-// double Kp = 0.0329, Ki = 0.1496, Kd = 0.0018; //PID
-PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
+// double Kp = 0.038372, Ki = 0, Kd = 0.0064641; // Considerando Gzoh
+// double Kp = 0.047273, Ki = 0.021656, Kd = 0.0098097; // desconsiderando Gzoh
+double Kp = 24.72842313395946, Ki = 49.431537320810676, Kd = 0.0050575;
 
-int contPrint = 0;
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
 
 void setup() {
     Timer1.initialize(PERIODO_AMOSTRAGEM);
@@ -91,7 +88,6 @@ void setup() {
 }
 
 void loop() {
-        // Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
 }
 
 void interrupcao(){
@@ -99,44 +95,41 @@ void interrupcao(){
     calculaVelocidade(); //Calcula a velocidade a partir da contagem dos passos do encoder
     // Serial.println(velocidade);
 
-    integrador(velocidade); // Integra a velocidade calculada e encontra a posição
-
-    // printadorPeriodico(); // Printa a cada 1 segundo ou conforme programado.
-
     // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
     tempo_atual = micros();
 
     // if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
-    //     atualizaReferencia();
-    //     // ref = 75*DEG_TO_RAD;
+    //     // atualizaReferencia();
+    //     ref = 75*DEG_TO_RAD;
     //     tempo_anterior = tempo_atual;
     // }
 
     refsExperimentais2(); // Função que seta diferentes referências a cada 2 segundos
     
-    controladorPOS(); // Função que controla a posição atualizando a variavel de saída do controlador
-    // controladorPOSLib();
+    // controladorPOS(); // Função que controla a posição atualizando a variavel de saída do controlador
+    controladorPID(); // Função que controla a velocidade com lib PID
 
-    // atualizarPWM(); // Função que atualiza a razão cíclica do motor
-    atualizarPWM2(); // Função que atualiza a razão cíclica do motor considerando a saturação, dead zone e tenta corrigir
+    atualizarPWM(); // Função que atualiza a razão cíclica do motor
+    // atualizarPWM2(); // Função que atualiza a razão cíclica do motor considerando a saturação, dead zone e tenta corrigir
     // atualizarPWM3(); // Função que atualiza a razão cíclica do motor mapeando a saida do controlador dentro do intervalo de atuação do motor
     
     // Serial.println(String(saida_controle));
     // Serial.println(pwm_val);
 
-    erro = ref - posicao;
-    Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
+    erro = ref - velocidade;
+    Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(velocidade, 5) + "," + String(ref,5));
     // Serial.println(String(erro*RAD_TO_DEG) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref));
 }
 
 void atualizarPWM(){
-    pwm_val = constrain(saida_controle*255,-254,254);
-    if (saida_controle <= 0){
-        controlaMotor(0, 1, abs(pwm_val));
-    }
-    else{
-        controlaMotor(1, 0, abs(pwm_val));
-    }
+    pwm_val = constrain(saida_controle*255,0,254);
+    controlaMotor(1,0,pwm_val);
+//     if (saida_controle <= 0){
+//         controlaMotor(0, 1, abs(pwm_val));
+//     }
+//     else{
+//         controlaMotor(1, 0, abs(pwm_val));
+//     }
 }
 
 void atualizarPWM2(){
@@ -163,7 +156,7 @@ void atualizarPWM2(){
 }
 
 void atualizarPWM3(){
-    pwm_val = map(((long)(abs(saida_controle)*100)), 0, 50, 25, 180);
+    pwm_val = map(((long)(abs(saida_controle)*100)), 0, 50, 30, 254);
     pwm_val = constrain(pwm_val,0,254);
     if (erro >= 0.0175){
         controlaMotor(1, 0, abs(pwm_val));
@@ -177,13 +170,13 @@ void atualizarPWM3(){
 }
 
 void atualizaReferencia() {
-    ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * (5.8);
+    ref = analogRead(REFERENCIA_PIN) * INV_LEITURA * (5.75);
 }
 
-void controladorPOSLib(){
+void controladorPID(){
     // Setpoint = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
     Setpoint = ref;
-    Input = posicao;
+    Input = velocidade;
     myPID.Compute();
     saida_controle = Output;
 }
@@ -196,23 +189,10 @@ void controladorPOS(){
     // saida_controle =  erro * K;
     
     // CONTROLADOR DE AVANÇO DE FASE DUPLO
-    // saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior)
-    //                  + 1.0116*saida_controle_anterior - 0.25583364*saida_controle_ante_anterior; //AVANÇO old
-
-    // saida_controle = K*(0.7285*erro - 1.297*erro_anterior + 0.5769*erro_ante_anterior)
-    //                 +1.226*saida_controle_anterior+0.3759*saida_controle_ante_anterior; //AVANÇO  Não fnciona      
+    // saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior) + 1.0116*saida_controle - 0.25583364*saida_controle_ante_anterior; //AVANÇO 
     
     // CONTROLADOR PD
-    saida_controle = Kp*(erro+erro_anterior) + (2*0.125*0.44*Kp*INV_AMOSTRAGEM_SEC)*(erro+erro_anterior)-saida_controle_anterior;
-
-    // CONTROLADOR PID
-    // saida_controle = Kp*(erro+erro_anterior)+((Kp*PERIODO_AMOSTRAGEM_SEC)*4.5455)*(erro_ante_anterior + 2*erro_anterior+erro) + (2*Kp*0.0550*INV_AMOSTRAGEM_SEC)*(erro-erro_anterior)-saida_controle_anterior;
-    // saida_controle = Kp * (erro + (PERIODO_AMOSTRAGEM_SEC * 2.2727) * (erro + erro_anterior) + (2 * 0.0550 * INV_AMOSTRAGEM_SEC) * (erro - erro_anterior));
-    // saida_controle =  erro*(Kp + Kp*2.2727*PERIODO_AMOSTRAGEM_SEC + 2*Kp*0.22*INV_AMOSTRAGEM_SEC) + erro_anterior*(Kp*PERIODO_AMOSTRAGEM_SEC*4.5455 + 4*Kp*0.055*INV_AMOSTRAGEM_SEC) + erro_ante_anterior*(-Kp + Kp*PERIODO_AMOSTRAGEM_SEC*2.2727 + 2*Kp*INV_AMOSTRAGEM_SEC*0.055) - saida_controle_ante_anterior;
-    // saida_controle = 0.3936*erro - 0.7185*erro_anterior + 0.3278*erro_ante_anterior + saida_controle_ante_anterior;
-    // saida_controle = (50)*(0.000658*(erro - erro_ante_anterior) + 
-    //                     0.00001496*(erro + 2*erro_anterior + erro_ante_anterior) +
-    //                     0.0036*(erro_anterior - erro_ante_anterior) - 0.0200*saida_controle_ante_anterior);
+    // saida_controle = Kp*(erro + erro_anterior) + (2*Kd*INV_AMOSTRAGEM_SEC)*(erro - erro_anterior) - saida_controle_anterior; 
 
     saida_controle_ante_anterior = saida_controle_anterior;
     erro_ante_anterior = erro_anterior;
@@ -225,17 +205,6 @@ void calculaVelocidade(){
     contador_passos_motor = 0;
 }
 
-void integrador(double vel_atual) {
-  posicao = posicao_anterior + 0.0005 * vel_atual + 0.0005 * velocidade_anterior;
-  if (posicao >= TWO_PI){
-    posicao = posicao - TWO_PI;
-  }
-  else if(posicao <= -TWO_PI){
-    posicao = posicao + TWO_PI;
-  } 
-    velocidade_anterior = velocidade;
-    posicao_anterior = posicao;
-}
 
 void leituraEncoder() {
 
@@ -281,35 +250,26 @@ void refsExperimentais2(){
     if (tempo_atual < (5 * 1000000)) {
         ref = 0.0000000000;  // DELAY ANTES DE COMEÇAR O EXPERIMENTO
     } else if (tempo_atual < (7 * 1000000)) {
-        ref = 0.5235987755982989;  // REFERENCIA EM 30º NOS 2s DE EXPERIMENTO
+        ref = 50;  // REFERENCIA EM 30º NOS 2s DE EXPERIMENTO
     } else if (tempo_atual < (9 * 1000000)) {
-        ref = 1.221730476396030;  // REFERENCIA EM 70º NOS 4s DE EXPERIMENTO
+        ref = 100;  // REFERENCIA EM 70º NOS 4s DE EXPERIMENTO
     } else if (tempo_atual < (11 * 1000000)) {
-        ref = 2.879385241571817;  // REFERENCIA EM 165º NOS 6s DE EXPERIMENTO
+        ref = 200;  // REFERENCIA EM 165º NOS 6s DE EXPERIMENTO
     } else if (tempo_atual < (13 * 1000000)) {
-        ref = 1.745329251994330;  // REFERENCIA EM 100º NOS 8s DE EXPERIMENTO
+        ref = 150;  // REFERENCIA EM 100º NOS 8s DE EXPERIMENTO
     } else if (tempo_atual < (15 * 1000000)) {
-        ref = 5.410520681182422;  // REFERENCIA EM 310º NOS 10s DE EXPERIMENTO
+        ref = 275;  // REFERENCIA EM 310º NOS 10s DE EXPERIMENTO
     } else if (tempo_atual < (17 * 1000000)) {
-        ref = 4.014257279127542;  // REFERENCIA EM 230º NOS 12s DE EXPERIMENTO
+        ref = 400;  // REFERENCIA EM 230º NOS 12s DE EXPERIMENTO
     } else if (tempo_atual < (19 * 1000000)) {
-        ref = 0.785398163397448;  // REFERENCIA EM 45º NOS 14s DE EXPERIMENTO
+        ref = 120;  // REFERENCIA EM 45º NOS 14s DE EXPERIMENTO
     } else if (tempo_atual < (21 * 1000000)) {
-        ref = 2.617993877991494;  // REFERENCIA EM 150º NOS 16s DE EXPERIMENTO
+        ref = 30;  // REFERENCIA EM 150º NOS 16s DE EXPERIMENTO
     } else if (tempo_atual < (23 * 1000000)) {
-        ref = 4.712388980384690;  // REFERENCIA EM 270º NOS 18s DE EXPERIMENTO
+        ref = 300;  // REFERENCIA EM 270º NOS 18s DE EXPERIMENTO
     } else if (tempo_atual < (25 * 1000000)) {
-        ref = 0.349065850398866;  // REFERENCIA EM 20º NOS 20s DE EXPERIMENTO
+        ref = 250;  // REFERENCIA EM 20º NOS 20s DE EXPERIMENTO
     } else {
         // Serial.end();
     }
-}
-
-void printadorPeriodico(){
-    if(contPrint == 100){
-        // Serial.println(String(posicao*RAD_TO_DEG));
-        Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
-      contPrint = 0;  
-    } 
-    contPrint++;
 }
