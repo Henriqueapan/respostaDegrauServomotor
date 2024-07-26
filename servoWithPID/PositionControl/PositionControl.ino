@@ -3,7 +3,7 @@
 
 #define chA 3 // Pino canal A do encoder
 #define chB 2 // Pino canal B do encoder
-#define REFERENCIA_PIN A0
+#define REFERENCIA_PIN A0 // Pino de leitura de referência do potenciômetro
 #define MOTOR_PIN_1 7 // Pino do motor (IN1)
 #define MOTOR_PIN_2 6 // Pino do motor (IN2)
 #define MOTOR_ENABLE 5 // Pino do enable da ponte H
@@ -12,13 +12,11 @@
 #define INV_MICRO .000001
 
 #define PERIODO_LEITURA_REFERENCIA 1000000 // Microssegundos
-// #define PERIODO_LEITURA_REFERENCIA 0 // Microssegundos
-
 // Definições das limitações do motor
 #define PWM_MIN 70 // Valor mínimo de PWM para acionar o motor
 #define DEAD_ZONE 13 
 
-// Tempo
+// Variáveis para medição de tempo
 volatile unsigned long tempo_atual = 0;
 volatile unsigned long tempo_anterior = 0;
 
@@ -30,18 +28,19 @@ double INV_AMOSTRAGEM_SEC = 1.0/(double)PERIODO_AMOSTRAGEM_SEC;
 double INV_LEITURA = 1.0/1020.0;
 
 // Variaveis de controle
-volatile double velocidade = 0;
-
-volatile double erro = 0;
 volatile double ref = 0;
 volatile double saida_controle = 0;
 
+volatile double velocidade = 0;
 volatile double velocidade_anterior = 0;
+
+volatile double erro = 0;
 volatile double erro_anterior = 0;
 volatile double erro_ante_anterior = 0;
 
 volatile double posicao = 0;
 volatile double posicao_anterior = 0;
+
 volatile double saida_controle_anterior = 0;
 volatile double saida_controle_ante_anterior = 0;
 
@@ -54,17 +53,14 @@ volatile int chB_antigo = 0;
 
 volatile int pwm_val = 0;
 
-// double K = 0.02; //PROPORCIONAL
-// double K = 1.35; //AVANCO DE FASE
-// double K = 1.6973; //AVANCO DE FASE
+// double K = 1.6973; // Ganho do compensador por avanço de fase
 
-
-// Defina Variáveis
+// Variáveis para biblioteca PID_v1
 double Setpoint, Input, Output;
-// Parâmetros PID
-// double Kp = 0.02, Ki = 0, Kd = 0; // P
+
+// Parâmetros PD
 double Kp = 0.0439, Ki = 0, Kd = 0.0024; // PD
-// double Kp = 0.0329, Ki = 0.1496, Kd = 0.0018; //PID
+
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
 
 int contPrint = 0;
@@ -84,95 +80,68 @@ void setup() {
     myPID.SetOutputLimits(-1, 1);
     myPID.SetSampleTime(10);
 
-    //   TCCR1B = TCCR1B & 0b11111000 | 1;
     attachInterrupt(digitalPinToInterrupt(chA), leituraEncoder, CHANGE);
     attachInterrupt(digitalPinToInterrupt(chB), leituraEncoder, CHANGE);
     Serial.begin(115200);
 }
 
 void loop() {
-        // Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
+    // Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
 }
 
 void interrupcao(){
 
     calculaVelocidade(); //Calcula a velocidade a partir da contagem dos passos do encoder
-    // Serial.println(velocidade);
 
     integrador(velocidade); // Integra a velocidade calculada e encontra a posição
 
-    // printadorPeriodico(); // Printa a cada 1 segundo ou conforme programado.
-
-    // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
     tempo_atual = micros();
 
-    // if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
-    //     atualizaReferencia();
-    //     // ref = 75*DEG_TO_RAD;
-    //     tempo_anterior = tempo_atual;
-    // }
+    // Atualiza a referência no período de sua atualização ou na primeira execução da rotina de interrupção
+    if (((tempo_atual - tempo_anterior) > PERIODO_LEITURA_REFERENCIA) || tempo_anterior == 0){
+        atualizaReferencia();
+        tempo_anterior = tempo_atual;
+    }
 
-    refsExperimentais2(); // Função que seta diferentes referências a cada 2 segundos
+    // Função que define diferentes referências a cada 2 segundos.
+    // Utilizada para geração de gráficos de respostas a variações de degrau.
+    // refsExperimentais();
     
     controladorPOS(); // Função que controla a posição atualizando a variavel de saída do controlador
-    // controladorPOSLib();
 
-    // atualizarPWM(); // Função que atualiza a razão cíclica do motor
-    atualizarPWM2(); // Função que atualiza a razão cíclica do motor considerando a saturação, dead zone e tenta corrigir
-    // atualizarPWM3(); // Função que atualiza a razão cíclica do motor mapeando a saida do controlador dentro do intervalo de atuação do motor
-    
-    // Serial.println(String(saida_controle));
-    // Serial.println(pwm_val);
+    atualizarPWM(); // Função que atualiza a razão cíclica do motor considerando a saturação e dead zone
 
     erro = ref - posicao;
-    Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
-    // Serial.println(String(erro*RAD_TO_DEG) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref));
 }
 
 void atualizarPWM(){
-    pwm_val = constrain(saida_controle*255,-254,254);
-    if (saida_controle <= 0){
-        controlaMotor(0, 1, abs(pwm_val));
-    }
-    else{
-        controlaMotor(1, 0, abs(pwm_val));
-    }
-}
+    pwm_val = saida_controle*255; // Duty cycle obtido da saída do controlador
 
-void atualizarPWM2(){
-    pwm_val = saida_controle*255;
-
-    if (abs(pwm_val) < DEAD_ZONE) {
-        // Se o valor do PWM estiver dentro da zona morta, desligue o motor
+    if (abs(pwm_val) < DEAD_ZONE) { // Correção de zona morta
+        // Se o valor do PWM estiver dentro da zona morta, freia o motor
         digitalWrite(MOTOR_PIN_1, 1);
         digitalWrite(MOTOR_PIN_2, 1);
         analogWrite(MOTOR_ENABLE, 255);
-    } else {
-        // Garanta que o valor do PWM seja pelo menos PWM_MIN
+    } else { // Correção de saturação
+        // Caso o valor do duty cycle do PWM não esteja dentro da zona morta, garante
+        // que o valor do duty cycle seja pelo menos PWM_MIN, garantindo o giro do motor
         if (abs(pwm_val) < PWM_MIN) {
+            // Identifica se o duty cycle é positivo ou negativo para evitar
+            // uma mudança não intencional de sinal na atribuição abaixo
             pwm_val = pwm_val < 0 ? - PWM_MIN : PWM_MIN;
         }
+
+        // Restringe o valor do duty cycle ao intervalo -254 a 254
         pwm_val = constrain(pwm_val,-254,254);
+
         if (erro < 0){
+            // Duty cycle negativo indica que o motor deve girar no sentido anti-horário
             controlaMotor(0, 1, abs(pwm_val));
         }
         else{
+            // Duty cycle negativo indica que o motor deve girar no sentido horário
             controlaMotor(1, 0, abs(pwm_val));
         }
-    }
-}
-
-void atualizarPWM3(){
-    pwm_val = map(((long)(abs(saida_controle)*100)), 0, 50, 25, 180);
-    pwm_val = constrain(pwm_val,0,254);
-    if (erro >= 0.0175){
-        controlaMotor(1, 0, abs(pwm_val));
-    }
-    else if(erro <= -0.0175){
-        controlaMotor(0, 1, abs(pwm_val));
-    }
-    else{
-       controlaMotor(1, 1, 254); 
     }
 }
 
@@ -181,38 +150,24 @@ void atualizaReferencia() {
 }
 
 void controladorPOSLib(){
-    // Setpoint = analogRead(REFERENCIA_PIN) * INV_LEITURA * TWO_PI;
     Setpoint = ref;
     Input = posicao;
+
     myPID.Compute();
+
     saida_controle = Output;
 }
 
 
 void controladorPOS(){
     erro = ref - posicao;
-
-    // CONTROLADOR PROPORCIONAL
-    // saida_controle =  erro * K;
     
     // CONTROLADOR DE AVANÇO DE FASE DUPLO
     // saida_controle = K*(erro - 1.6995*erro_anterior + 0.71022674*erro_ante_anterior)
-    //                  + 1.0116*saida_controle_anterior - 0.25583364*saida_controle_ante_anterior; //AVANÇO old
-
-    // saida_controle = K*(0.7285*erro - 1.297*erro_anterior + 0.5769*erro_ante_anterior)
-    //                 +1.226*saida_controle_anterior+0.3759*saida_controle_ante_anterior; //AVANÇO  Não fnciona      
+    //                  + 1.0116*saida_controle_anterior - 0.25583364*saida_controle_ante_anterior;
     
     // CONTROLADOR PD
     saida_controle = Kp*(erro+erro_anterior) + (2*0.125*0.44*Kp*INV_AMOSTRAGEM_SEC)*(erro+erro_anterior)-saida_controle_anterior;
-
-    // CONTROLADOR PID
-    // saida_controle = Kp*(erro+erro_anterior)+((Kp*PERIODO_AMOSTRAGEM_SEC)*4.5455)*(erro_ante_anterior + 2*erro_anterior+erro) + (2*Kp*0.0550*INV_AMOSTRAGEM_SEC)*(erro-erro_anterior)-saida_controle_anterior;
-    // saida_controle = Kp * (erro + (PERIODO_AMOSTRAGEM_SEC * 2.2727) * (erro + erro_anterior) + (2 * 0.0550 * INV_AMOSTRAGEM_SEC) * (erro - erro_anterior));
-    // saida_controle =  erro*(Kp + Kp*2.2727*PERIODO_AMOSTRAGEM_SEC + 2*Kp*0.22*INV_AMOSTRAGEM_SEC) + erro_anterior*(Kp*PERIODO_AMOSTRAGEM_SEC*4.5455 + 4*Kp*0.055*INV_AMOSTRAGEM_SEC) + erro_ante_anterior*(-Kp + Kp*PERIODO_AMOSTRAGEM_SEC*2.2727 + 2*Kp*INV_AMOSTRAGEM_SEC*0.055) - saida_controle_ante_anterior;
-    // saida_controle = 0.3936*erro - 0.7185*erro_anterior + 0.3278*erro_ante_anterior + saida_controle_ante_anterior;
-    // saida_controle = (50)*(0.000658*(erro - erro_ante_anterior) + 
-    //                     0.00001496*(erro + 2*erro_anterior + erro_ante_anterior) +
-    //                     0.0036*(erro_anterior - erro_ante_anterior) - 0.0200*saida_controle_ante_anterior);
 
     saida_controle_ante_anterior = saida_controle_anterior;
     erro_ante_anterior = erro_anterior;
@@ -277,7 +232,7 @@ void controlaMotor(bool in1, bool in2, int valor_pwm){
     analogWrite(MOTOR_ENABLE, valor_pwm);
 }
 
-void refsExperimentais2(){
+void refsExperimentais(){
     if (tempo_atual < (5 * 1000000)) {
         ref = 0.0000000000;  // DELAY ANTES DE COMEÇAR O EXPERIMENTO
     } else if (tempo_atual < (7 * 1000000)) {
@@ -303,13 +258,4 @@ void refsExperimentais2(){
     } else {
         // Serial.end();
     }
-}
-
-void printadorPeriodico(){
-    if(contPrint == 100){
-        // Serial.println(String(posicao*RAD_TO_DEG));
-        Serial.println(String(erro,5) + "," + String(tempo_atual) + "," + String(posicao, 5) + "," + String(ref,5));
-      contPrint = 0;  
-    } 
-    contPrint++;
 }
